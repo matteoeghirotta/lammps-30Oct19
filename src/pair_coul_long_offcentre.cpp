@@ -57,7 +57,7 @@ PairCoulLongOffcentre::PairCoulLongOffcentre(LAMMPS *lmp) : Pair(lmp)
   if (!avec)
     error->all(FLERR,"Pair Coul Cut Offcenter requires atom style ellipsoid");
 
-  single_enable = 1; 
+  single_enable = 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -77,20 +77,196 @@ PairCoulLongOffcentre::~PairCoulLongOffcentre()
 
 /* ---------------------------------------------------------------------- */
 
+void PairCoulLongOffcentre::compute_pair(int i, int j, int eflag)
+{
+  double ecoul = 0.0;
+
+  bool sameAtom = i == j;
+
+  int *type = atom->type;
+  int *numneigh = list->numneigh;
+  int **firstneigh = list->firstneigh;
+
+  int itype = type[i];
+  int jtype = type[j];
+  int jnum = numneigh[i];
+
+  double *iquat,*jquat;
+  AtomVecEllipsoid::Bonus *bonus = avec->bonus;
+  int *ellipsoid = atom->ellipsoid;
+  double **x = atom->x;
+  double **f = atom->f;
+  double **tor = atom->torque;
+  double fforce[3],ttor[3],r12[3];
+  double forcecoul;
+  double grij,expm2,prefactor,t,erfc;
+  double fpair;
+  double fraction,table;
+  int itable;
+  int nlocal = atom->nlocal;
+  int newton_pair = force->newton_pair;
+  double qqrd2e = force->qqrd2e;
+  double *special_coul = force->special_coul;
+
+  double factor_coul = special_coul[sbmask(j)];
+  factor_coul = sameAtom ? 0.0 : factor_coul;
+  j &= NEIGHMASK;
+
+  // rotate site1 in lab frame
+  double rotMat1[3][3];
+  if (nsites[itype] > 0) {
+    iquat = bonus[ellipsoid[i]].quat;
+    MathExtra::quat_to_mat(iquat, rotMat1);
+  }
+
+  // rotate site2 in lab frame
+  double rotMat2[3][3];
+  if (nsites[jtype] > 0) {
+    jquat = bonus[ellipsoid[j]].quat;
+    MathExtra::quat_to_mat(jquat, rotMat2);
+  }
+
+  for (int s1 = 1; s1 <= nsites[itype]; ++s1) {
+    double q1 = molFrameCharge[itype][s1];
+    double labFrameSite1[3] = {0.0, 0.0, 0.0};
+    if (molFrameSite[itype][s1][0] != 0.0 ||
+        molFrameSite[itype][s1][1] != 0.0 ||
+        molFrameSite[itype][s1][2] != 0.0)
+    {
+      double ms1[3] = {
+        molFrameSite[itype][s1][0],
+        molFrameSite[itype][s1][1],
+        molFrameSite[itype][s1][2]
+      };
+
+      MathExtra::matvec(rotMat1, ms1, labFrameSite1);
+    }
+
+    double rsite1[3] = {
+      labFrameSite1[0]+x[i][0],
+      labFrameSite1[1]+x[i][1],
+      labFrameSite1[2]+x[i][2]
+    };
+
+    for (int s2 = 1; s2 <= nsites[jtype]; ++s2) {
+      double labFrameSite2[3] = {0.0, 0.0, 0.0};
+      if (molFrameSite[jtype][s2][0] != 0.0 ||
+          molFrameSite[jtype][s2][1] != 0.0 ||
+          molFrameSite[jtype][s2][2] != 0.0)
+      {
+        double ms2[3] = {
+          molFrameSite[jtype][s2][0],
+          molFrameSite[jtype][s2][1],
+          molFrameSite[jtype][s2][2]
+        };
+
+        MathExtra::matvec(rotMat2, ms2, labFrameSite2);
+      }
+
+      double rsite2[3] = {
+        labFrameSite2[0]+x[j][0],
+        labFrameSite2[1]+x[j][1],
+        labFrameSite2[2]+x[j][2]
+      };
+
+      // r12 = site center to site center vector
+      r12[0] = rsite1[0]-rsite2[0];
+      r12[1] = rsite1[1]-rsite2[1];
+      r12[2] = rsite1[2]-rsite2[2];
+
+      //domain->minimum_image(r12[0], r12[1], r12[2]);
+      double rsq = MathExtra::dot3(r12, r12);
+
+      if ((rsq < cut_coulsq) && ((!sameAtom) || (sameAtom && (s1 < s2)))) {
+        double r2inv = 1.0/rsq;
+        double q2 = molFrameCharge[jtype][s2];
+
+        if (!ncoultablebits || rsq <= tabinnersq) {
+          double r = sqrt(rsq);
+          double grij = g_ewald * r;
+          double expm2 = exp(-grij*grij);
+          double t = 1.0 / (1.0 + EWALD_P*grij);
+          erfc = t * (A1+t*(A2+t*(A3+t*(A4+t*A5)))) * expm2;
+          prefactor = qqrd2e * scale[itype][jtype] * q1*q2/r;
+          forcecoul = prefactor * (erfc + EWALD_F*grij*expm2);
+          if (factor_coul < 1.0) forcecoul -= (1.0-factor_coul)*prefactor;
+        } else {
+          union_int_float_t rsq_lookup;
+          rsq_lookup.f = rsq;
+          itable = rsq_lookup.i & ncoulmask;
+          itable >>= ncoulshiftbits;
+          fraction = (rsq_lookup.f - rtable[itable]) * drtable[itable];
+          table = ftable[itable] + fraction*dftable[itable];
+          forcecoul = scale[itype][jtype] * q1*q2 * table;
+          if (factor_coul < 1.0) {
+            table = ctable[itable] + fraction*dctable[itable];
+            prefactor = scale[itype][jtype] * q1*q2 * table;
+            forcecoul -= (1.0-factor_coul)*prefactor;
+          }
+        }
+
+        double fpair = forcecoul * r2inv;
+
+        fforce[0] = r12[0]*fpair; ///r12n;
+        fforce[1] = r12[1]*fpair; ///r12n;
+        fforce[2] = r12[2]*fpair; ///r12n;
+
+        // F_parallel = F_tot . r_normalized
+        f[i][0] += fforce[0];
+        f[i][1] += fforce[1];
+        f[i][2] += fforce[2];
+
+        // Torque = r x F_tot
+        // torque on 1 = -pos1 x grad_pos1
+        MathExtra::cross3(labFrameSite1, fforce, ttor);
+        tor[i][0] += ttor[0];
+        tor[i][1] += ttor[1];
+        tor[i][2] += ttor[2];
+
+        if (newton_pair || j < nlocal) {
+          // F_parallel = F_tot . r_normalized
+          f[j][0] -= fforce[0]; ///r12n;
+          f[j][1] -= fforce[1]; ///r12n;
+          f[j][2] -= fforce[2]; ///r12n;
+          MathExtra::cross3(labFrameSite2, fforce, ttor);
+
+          tor[j][0] -= ttor[0];
+          tor[j][1] -= ttor[1];
+          tor[j][2] -= ttor[2];
+        }
+
+        if (eflag) {
+          if (!ncoultablebits || rsq <= tabinnersq)
+            ecoul = prefactor*erfc;
+          else {
+            table = etable[itable] + fraction*detable[itable];
+            ecoul = scale[itype][jtype] * q1*q2 * table;
+          }
+          if (factor_coul < 1.0) ecoul -= (1.0-factor_coul)*prefactor;
+        }
+
+        if (evflag) {
+          ev_tally(i,j,nlocal,newton_pair,
+                   0.0,ecoul,fpair,r12[0],r12[1],r12[2]);
+        }
+      }
+    }
+  }
+}
+
 void PairCoulLongOffcentre::compute(int eflag, int vflag)
 {
-  int i,j,ii,jj,inum,jnum,itable,itype,jtype;
+  int i,j,ii,jj,itable,itype,jtype;
   double q1, q2;
   double ecoul,fpair;
   double fraction,table;
   double r,r2inv,forcecoul,factor_coul;
   double grij,expm2,prefactor,t,erfc;
-  int *ilist,*jlist,*numneigh,**firstneigh;
   double rsq;
   double *iquat,*jquat;
   double fforce[3],ttor[3],r12[3];
 
-  ecoul = 0.0;
+
   if (eflag || vflag) ev_setup(eflag,vflag);
   else evflag = vflag_fdotr = 0;
 
@@ -98,180 +274,34 @@ void PairCoulLongOffcentre::compute(int eflag, int vflag)
   int *ellipsoid = atom->ellipsoid;
   double **x = atom->x;
   double **f = atom->f;
-  double **tor = atom->torque;    
+  double **tor = atom->torque;
   int *type = atom->type;
   int nlocal = atom->nlocal;
   double *special_coul = force->special_coul;
   int newton_pair = force->newton_pair;
   double qqrd2e = force->qqrd2e;
 
-  inum = list->inum;
-  ilist = list->ilist;
-  numneigh = list->numneigh;
-  firstneigh = list->firstneigh;
-  
-  // loop over neighbors of my atoms
+  int **firstneigh = list->firstneigh;
+  int *numneigh = list->numneigh;
 
+  int inum = list->inum;
+  int *ilist = list->ilist;
+
+  // loop over neighbors of my atoms
   for (ii = 0; ii < inum; ii++) {
     i = ilist[ii];
-    itype = type[i];
-    jlist = firstneigh[i];
-    jnum = numneigh[i];
+    int *jlist = firstneigh[i];
+    int jnum = numneigh[i];
 
-    // rotate site1 in lab frame
-    double rotMat1[3][3];
-    if (nsites[itype] > 0) {
-      iquat = bonus[ellipsoid[i]].quat;
-      MathExtra::quat_to_mat(iquat, rotMat1);
+    // loop over neighbors
+    for (jj = 0; jj < jnum; jj++) {
+      j = jlist[jj];
+      compute_pair(i, j, eflag);
     }
-
-    for (int s1 = 1; s1 <= nsites[itype]; ++s1) {
-      q1 = molFrameCharge[itype][s1];
-      double labFrameSite1[3] = {0.0, 0.0, 0.0};
-      if (molFrameSite[itype][s1][0] != 0.0 ||
-	  molFrameSite[itype][s1][1] != 0.0 ||
-	  molFrameSite[itype][s1][2] != 0.0)
-	{
-	  double ms1[3] = {
-	    molFrameSite[itype][s1][0],
-	    molFrameSite[itype][s1][1],
-	    molFrameSite[itype][s1][2]
-	  };
-
-	  MathExtra::matvec(rotMat1, ms1, labFrameSite1);
-	}
-      
-      double rsite1[3] = {
-	labFrameSite1[0]+x[i][0],
-	labFrameSite1[1]+x[i][1],
-	labFrameSite1[2]+x[i][2]
-      };
-	
-      for (jj = 0; jj < jnum; jj++) {
-	j = jlist[jj];
-	factor_coul = special_coul[sbmask(j)];
-	j &= NEIGHMASK;
-	jtype = type[j];
-
-	// rotate site2 in lab frame
-	double rotMat2[3][3];
-	if (nsites[jtype] > 0) {
-	  jquat = bonus[ellipsoid[j]].quat;
-	  MathExtra::quat_to_mat(jquat, rotMat2);
-	  //this was originally here but why not quat_to_mat as for site 1? 
-	  //MathExtra::quat_to_mat_trans(jquat, rotMat2);
-	}
-
-	for (int s2 = 1; s2 <= nsites[jtype]; ++s2) {
-	  double labFrameSite2[3] = {0.0, 0.0, 0.0};
-	  if (molFrameSite[jtype][s2][0] != 0.0 ||
-	      molFrameSite[jtype][s2][1] != 0.0 ||
-	      molFrameSite[jtype][s2][2] != 0.0)
-	    {
-	      double ms2[3] = {
-		molFrameSite[jtype][s2][0],
-		molFrameSite[jtype][s2][1],
-		molFrameSite[jtype][s2][2]
-	      };
-
-	      MathExtra::matvec(rotMat2, ms2, labFrameSite2);
-	    }
-		
-	  double rsite2[3] = {
-	    labFrameSite2[0]+x[j][0],
-	    labFrameSite2[1]+x[j][1],
-	    labFrameSite2[2]+x[j][2]
-	  };
-
-	  // r12 = site center to site center vector
-	  r12[0] = rsite1[0]-rsite2[0];
-	  r12[1] = rsite1[1]-rsite2[1];
-	  r12[2] = rsite1[2]-rsite2[2];
-
-	  //domain->minimum_image(r12[0], r12[1], r12[2]);
-	  rsq = MathExtra::dot3(r12, r12);
-
-	  if (rsq < cut_coulsq) {
-	    r2inv = 1.0/rsq;
-	    q2 = molFrameCharge[jtype][s2];
-
-	    if (!ncoultablebits || rsq <= tabinnersq) {
-	      r = sqrt(rsq);
-	      grij = g_ewald * r;
-	      expm2 = exp(-grij*grij);
-	      t = 1.0 / (1.0 + EWALD_P*grij);
-	      erfc = t * (A1+t*(A2+t*(A3+t*(A4+t*A5)))) * expm2;
-	      prefactor = qqrd2e * scale[itype][jtype] * q1*q2/r;
-	      forcecoul = prefactor * (erfc + EWALD_F*grij*expm2);
-	      if (factor_coul < 1.0) forcecoul -= (1.0-factor_coul)*prefactor;
-	    } else {
-	      union_int_float_t rsq_lookup;
-	      rsq_lookup.f = rsq;
-	      itable = rsq_lookup.i & ncoulmask;
-	      itable >>= ncoulshiftbits;
-	      fraction = (rsq_lookup.f - rtable[itable]) * drtable[itable];
-	      table = ftable[itable] + fraction*dftable[itable];
-	      forcecoul = scale[itype][jtype] * q1*q2 * table;
-	      if (factor_coul < 1.0) {
-		table = ctable[itable] + fraction*dctable[itable];
-		prefactor = scale[itype][jtype] * q1*q2 * table;
-		forcecoul -= (1.0-factor_coul)*prefactor;
-	      }
-	    }
-
-	    fpair = forcecoul * r2inv;
-
-	    fforce[0] = r12[0]*fpair; ///r12n;
-	    fforce[1] = r12[1]*fpair; ///r12n;
-	    fforce[2] = r12[2]*fpair; ///r12n;
-
-	    // F_parallel = F_tot . r_normalized		
-	    f[i][0] += fforce[0];
-	    f[i][1] += fforce[1];
-	    f[i][2] += fforce[2];
-
-	    // Torque = r x F_tot
-	    // torque on 1 = -pos1 x grad_pos1
-	    MathExtra::cross3(labFrameSite1, fforce, ttor);
-	    tor[i][0] += ttor[0];
-	    tor[i][1] += ttor[1];
-	    tor[i][2] += ttor[2];
-
-	    if (newton_pair || j < nlocal) {
-	      // F_parallel = F_tot . r_normalized
-	      f[j][0] -= fforce[0]; ///r12n;
-	      f[j][1] -= fforce[1]; ///r12n;
-	      f[j][2] -= fforce[2]; ///r12n;
-	      MathExtra::cross3(labFrameSite2, fforce, ttor);
-
-	      tor[j][0] -= ttor[0];
-	      tor[j][1] -= ttor[1];
-	      tor[j][2] -= ttor[2];
-	    }
-
-	    if (eflag) {
-	      if (!ncoultablebits || rsq <= tabinnersq)
-		ecoul = prefactor*erfc;
-	      else {
-		table = etable[itable] + fraction*detable[itable];
-		ecoul = scale[itype][jtype] * q1*q2 * table;
-	      }
-	      if (factor_coul < 1.0) ecoul -= (1.0-factor_coul)*prefactor;
-	    }
-
-	    if (evflag) {ev_tally(i,j,nlocal,newton_pair,
-				 0.0,ecoul,fpair,r12[0],r12[1],r12[2]);
-	      //delx,dely,delz);
-	      				 
-	      // printf("PairCoulLongOffcentre::compute %f %f %f   %f %f %f\n",
-	      // 	     delx,dely,delz,
-	      // 	     r12[0],r12[1],r12[2]);
-	    }
-	  }
-	}
-      }
-    }
+    // long range self interactions of own charges
+    compute_pair(i, i, eflag);
   }
+
   if (vflag_fdotr) virial_fdotr_compute();
 }
 
@@ -323,58 +353,58 @@ void PairCoulLongOffcentre::settings(int narg, char **arg)
   int totsites = 0;
   unsigned argcount = start_sitesspec_argcount;
   for (int t = 1; t <= nCoulSites; ++t)
-    {
-      atomType[t] = force->inumeric(FLERR, arg[argcount++]);
-      ++nsites[atomType[t]];
+  {
+    atomType[t] = force->inumeric(FLERR, arg[argcount++]);
+    ++nsites[atomType[t]];
 
-      argcount += 4;
+    argcount += 4;
 
-      // std::cout << "[PairCoulLongOffcentre] coulsite " << t
-      // 					<< " atype " << atomType[t]
-      // 					<< " ncoulsites " << nsites[atomType[t]]<< std::endl;
-    }
+    // std::cout << "[PairCoulLongOffcentre] coulsite " << t
+    // 					<< " atype " << atomType[t]
+    // 					<< " ncoulsites " << nsites[atomType[t]]<< std::endl;
+  }
 
   //std::cout << "[PairCoulLongOffcentre] HERE" << std::endl;
   argcount = start_sitesspec_argcount;
   for (int type = 1; type <= atom->ntypes; ++type)
+  {
+    //int type = atomType[t];
+
+    molFrameSite[type] = new double*[nsites[type]+1];
+    molFrameCharge[type] = new double[nsites[type]+1];
+
+    for (int site = 1; site <= nsites[type]; ++site)
     {
-      //int type = atomType[t];
+      ++argcount;
+      // std::cout << "[PairCoulLongOffcentre] site " <<
+      // 	site << "/" << nsites[type] << " atype "<< type<< std::endl;
 
-      molFrameSite[type] = new double*[nsites[type]+1];
-      molFrameCharge[type] = new double[nsites[type]+1];
+      molFrameSite[type][site] = new double[3];
+      molFrameSite[type][site][0] = force->numeric(FLERR, arg[argcount++]);
+      molFrameSite[type][site][1] = force->numeric(FLERR, arg[argcount++]);
+      molFrameSite[type][site][2] = force->numeric(FLERR, arg[argcount++]);
 
-      for (int site = 1; site <= nsites[type]; ++site)
-	{
-	  ++argcount;
-	  // std::cout << "[PairCoulLongOffcentre] site " <<
-	  // 	site << "/" << nsites[type] << " atype "<< type<< std::endl;
+      molFrameCharge[type][site] = force->numeric(FLERR, arg[argcount++]);
 
-	  molFrameSite[type][site] = new double[3];
-	  molFrameSite[type][site][0] = force->numeric(FLERR, arg[argcount++]);
-	  molFrameSite[type][site][1] = force->numeric(FLERR, arg[argcount++]);
-	  molFrameSite[type][site][2] = force->numeric(FLERR, arg[argcount++]);
-	  
-	  molFrameCharge[type][site] = force->numeric(FLERR, arg[argcount++]);
-
-	  // std::cout << "[PairCoulLongOffcentre] type " <<
-	  // 	type << " " << " site " << site
-	  // 					<< " pos "
-	  // 					<< " " << molFrameSite[type][site][0] 
-	  // 					<< " " << molFrameSite[type][site][1] 
-	  // 					<< " " << molFrameSite[type][site][2] 
-	  // 					<< " charge "
-	  // 					<< " " << molFrameCharge[type][site]
-	  // 					<< " arg " << argcount
-	  // 					<< std::endl;	  
-	}
-
-      totsites += nsites[type];
+      // std::cout << "[PairCoulLongOffcentre] type " <<
+      // 	type << " " << " site " << site
+      // 					<< " pos "
+      // 					<< " " << molFrameSite[type][site][0] 
+      // 					<< " " << molFrameSite[type][site][1] 
+      // 					<< " " << molFrameSite[type][site][2] 
+      // 					<< " charge "
+      // 					<< " " << molFrameCharge[type][site]
+      // 					<< " arg " << argcount
+      // 					<< std::endl;	  
     }
+
+    totsites += nsites[type];
+  }
 
   // check 
   if (narg > argcount) {
     fprintf(stderr, "number of specified charges exceeds the declared %i\n",
-	    nCoulSites);
+            nCoulSites);
     exit(1);
   }
 }
@@ -464,17 +494,17 @@ void PairCoulLongOffcentre::init_tables()
 
   tabinnersq = tabinner*tabinner;
   init_bitmap(tabinner,cut_coul,ncoultablebits,
-	      masklo,maskhi,ncoulmask,ncoulshiftbits);
-  
+              masklo,maskhi,ncoulmask,ncoulshiftbits);
+
   int ntable = 1;
   for (int i = 0; i < ncoultablebits; i++) ntable *= 2;
-  
+
   // linear lookup tables of length N = 2^ncoultablebits
   // stored value = value at lower edge of bin
   // d values = delta from lower edge to upper edge of bin
 
   if (ftable) free_tables();
-  
+
   memory->create(rtable,ntable,"pair:rtable");
   memory->create(ftable,ntable,"pair:ftable");
   memory->create(ctable,ntable,"pair:ctable");
@@ -498,7 +528,7 @@ void PairCoulLongOffcentre::init_tables()
   int itablemin;
   minrsq_lookup.i = 0 << ncoulshiftbits;
   minrsq_lookup.i |= maskhi;
-    
+
   for (int i = 0; i < ntable; i++) {
     rsq_lookup.i = i << ncoulshiftbits;
     rsq_lookup.i |= masklo;
@@ -523,23 +553,23 @@ void PairCoulLongOffcentre::init_tables()
       ptable[i] = qqrd2e/r;
       vtable[i] = qqrd2e/r * (derfc + EWALD_F*grij*expm2);
       if (rsq_lookup.f > cut_respa[2]*cut_respa[2]) {
-	if (rsq_lookup.f < cut_respa[3]*cut_respa[3]) {
-	  rsw = (r - cut_respa[2])/(cut_respa[3] - cut_respa[2]); 
-	  ftable[i] += qqrd2e/r * rsw*rsw*(3.0 - 2.0*rsw);
-	  ctable[i] = qqrd2e/r * rsw*rsw*(3.0 - 2.0*rsw);
-	} else {
-	  ftable[i] = qqrd2e/r * (derfc + EWALD_F*grij*expm2);
-	  ctable[i] = qqrd2e/r;
-	}
+        if (rsq_lookup.f < cut_respa[3]*cut_respa[3]) {
+          rsw = (r - cut_respa[2])/(cut_respa[3] - cut_respa[2]); 
+          ftable[i] += qqrd2e/r * rsw*rsw*(3.0 - 2.0*rsw);
+          ctable[i] = qqrd2e/r * rsw*rsw*(3.0 - 2.0*rsw);
+        } else {
+          ftable[i] = qqrd2e/r * (derfc + EWALD_F*grij*expm2);
+          ctable[i] = qqrd2e/r;
+        }
       }
     }
     minrsq_lookup.f = MIN(minrsq_lookup.f,rsq_lookup.f);
   }
 
   tabinnersq = minrsq_lookup.f;
-  
+
   int ntablem1 = ntable - 1;
-  
+
   for (int i = 0; i < ntablem1; i++) {
     drtable[i] = 1.0/(rtable[i+1] - rtable[i]);
     dftable[i] = ftable[i+1] - ftable[i];
@@ -553,10 +583,10 @@ void PairCoulLongOffcentre::init_tables()
       dptable[i] = ptable[i+1] - ptable[i];
     }
   }
-  
+
   // get the delta values for the last table entries 
   // tables are connected periodically between 0 and ntablem1
-    
+
   drtable[ntablem1] = 1.0/(rtable[0] - rtable[ntablem1]);
   dftable[ntablem1] = ftable[0] - ftable[ntablem1];
   dctable[ntablem1] = ctable[0] - ctable[ntablem1];
@@ -728,16 +758,16 @@ double PairCoulLongOffcentre::single(int i, int j, int itype, int jtype,
     if (molFrameSite[itype][s1][0] != 0.0 ||
         molFrameSite[itype][s1][1] != 0.0 ||
         molFrameSite[itype][s1][2] != 0.0)
-      {
-        double ms1[3] = {
-          molFrameSite[itype][s1][0],
-          molFrameSite[itype][s1][1],
-          molFrameSite[itype][s1][2]
-        };
+    {
+      double ms1[3] = {
+        molFrameSite[itype][s1][0],
+        molFrameSite[itype][s1][1],
+        molFrameSite[itype][s1][2]
+      };
 
-        MathExtra::matvec(rotMat1, ms1, labFrameSite1);
-      }
-      
+      MathExtra::matvec(rotMat1, ms1, labFrameSite1);
+    }
+
     double rsite1[3] = {
       labFrameSite1[0]+x[i][0],
       labFrameSite1[1]+x[i][1],
@@ -757,16 +787,16 @@ double PairCoulLongOffcentre::single(int i, int j, int itype, int jtype,
       if (molFrameSite[jtype][s2][0] != 0.0 ||
           molFrameSite[jtype][s2][1] != 0.0 ||
           molFrameSite[jtype][s2][2] != 0.0)
-        {
-          double ms2[3] = {
-            molFrameSite[jtype][s2][0],
-            molFrameSite[jtype][s2][1],
-            molFrameSite[jtype][s2][2]
-          };
+      {
+        double ms2[3] = {
+          molFrameSite[jtype][s2][0],
+          molFrameSite[jtype][s2][1],
+          molFrameSite[jtype][s2][2]
+        };
 
-          MathExtra::matvec(rotMat2, ms2, labFrameSite2);
-        }
-		
+        MathExtra::matvec(rotMat2, ms2, labFrameSite2);
+      }
+
       double rsite2[3] = {
         labFrameSite2[0]+x[j][0],
         labFrameSite2[1]+x[j][1],
