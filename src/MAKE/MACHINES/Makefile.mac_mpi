@@ -51,7 +51,7 @@ MPI_LIB =
 # PATH = path for FFT library
 # LIB = name of FFT library
 
-FFTW =	/usr/local/Cellar/fftw/3.3.8_2
+FFTW =	/usr/local/Cellar/fftw/3.3.9
 
 FFT_INC =       -DFFT_FFTW -I${FFTW}/include
 FFT_PATH =	-L${FFTW}/lib
