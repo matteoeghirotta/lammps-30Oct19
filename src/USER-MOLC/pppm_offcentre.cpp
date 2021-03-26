@@ -73,8 +73,8 @@ PPPMOffcentre::PPPMOffcentre(LAMMPS *lmp) :
   drho1d(NULL), drho_coeff(NULL), sf_precoeff1(NULL), sf_precoeff2(NULL),
   sf_precoeff3(NULL), sf_precoeff4(NULL), sf_precoeff5(NULL),
   sf_precoeff6(NULL), acons(NULL), density_A_brick(NULL), density_B_brick(NULL),
-  density_A_fft(NULL), density_B_fft(NULL), fft1(NULL), fft2(NULL), remap(NULL),
-  cg(NULL), cg_peratom(NULL), part2grid(NULL), boxlo(NULL), ncharges(0) {
+  density_A_fft(NULL), density_B_fft(NULL), fft1(NULL), fft2(NULL),
+  ncharges(0), remap(NULL), cg(NULL), cg_peratom(NULL), part2grid(NULL), boxlo(NULL) {
     peratom_allocate_flag = 0; group_allocate_flag = 0;
 
   pppmflag = 1;
@@ -794,9 +794,7 @@ void PPPMOffcentre::compute(int eflag, int vflag)
   // set energy/virial flags
   // invoke allocate_peratom() if needed for first time
 
-  if (eflag || vflag) ev_setup(eflag,vflag);
-  else evflag = evflag_atom = eflag_global = vflag_global =
-    eflag_atom = vflag_atom = 0;
+  ev_init(eflag,vflag);
 
   if (evflag_atom && !peratom_allocate_flag) {
     allocate_peratom();
@@ -2811,7 +2809,7 @@ void PPPMOffcentre::fieldforce_ik()
 
   double **x = atom->x;
   double **f = atom->f;
-  double **tor = atom->torque;    
+  double **tor = atom->torque;
   int *type = atom->type;
   double *iquat;
   AtomVecEllipsoid::Bonus *bonus = avec->bonus;
@@ -2824,83 +2822,79 @@ void PPPMOffcentre::fieldforce_ik()
   for (i = 0; i < nlocal; i++) {
     int itype = type[i];
     double rotMat[3][3];
+
     if (nsites[itype] > 0) {
       iquat = bonus[ellipsoid[i]].quat;
       MathExtra::quat_to_mat(iquat, rotMat);
-    }
 
-    for (int s = 1; s <= nsites[itype]; ++s) {
-      double labFrameSite[3] = {0.0, 0.0, 0.0};
-      if (molFrameSite[itype][s][0] != 0.0 ||
-          molFrameSite[itype][s][1] != 0.0 ||
-          molFrameSite[itype][s][2] != 0.0) {
-        double ms[3] = {
-          molFrameSite[itype][s][0],
-          molFrameSite[itype][s][1],
-          molFrameSite[itype][s][2]
+      for (int s = 1; s <= nsites[itype]; ++s) {
+        double labFrameSite[3] = {0.0, 0.0, 0.0};
+
+        if (molFrameSite[itype][s][0] != 0.0 ||
+            molFrameSite[itype][s][1] != 0.0 ||
+            molFrameSite[itype][s][2] != 0.0) {
+          double ms[3] = {
+            molFrameSite[itype][s][0],
+            molFrameSite[itype][s][1],
+            molFrameSite[itype][s][2]
+          };
+
+          MathExtra::matvec(rotMat, ms, labFrameSite);
+        }
+
+        double rsite[3] = {
+          labFrameSite[0] + x[i][0],
+          labFrameSite[1] + x[i][1],
+          labFrameSite[2] + x[i][2]
         };
 
-        MathExtra::matvec(rotMat, ms, labFrameSite);
-      }	
+        // if triclinic all expressed in lamda coords at this point
+        if (triclinic != 0)
+          domain->x2lamda(rsite, rsite);
 
-      double rsite[3] = {
-        labFrameSite[0]+x[i][0],
-        labFrameSite[1]+x[i][1],
-        labFrameSite[2]+x[i][2]
-      };
+        nx = part2grid[i][s][0];
+        ny = part2grid[i][s][1];
+        nz = part2grid[i][s][2];
+        dx = nx+shiftone - (rsite[0]-boxlo[0])*delxinv;
+        dy = ny+shiftone - (rsite[1]-boxlo[1])*delyinv;
+        dz = nz+shiftone - (rsite[2]-boxlo[2])*delzinv;
 
-      // if triclinic all expressed in lamda coords at this point
-      if (triclinic != 0)
-        domain->x2lamda(rsite, rsite);
+        compute_rho1d(dx,dy,dz);
 
-      nx = part2grid[i][s][0];
-      ny = part2grid[i][s][1];
-      nz = part2grid[i][s][2];
-      dx = nx+shiftone - (rsite[0]-boxlo[0])*delxinv;
-      dy = ny+shiftone - (rsite[1]-boxlo[1])*delyinv;
-      dz = nz+shiftone - (rsite[2]-boxlo[2])*delzinv;
-
-      compute_rho1d(dx,dy,dz);
-
-      ekx = eky = ekz = ZEROF;
-      for (n = nlower; n <= nupper; n++) {
-        mz = n+nz;
-        z0 = rho1d[2][n];
-        for (m = nlower; m <= nupper; m++) {
-          my = m+ny;
-          y0 = z0*rho1d[1][m];
-          for (l = nlower; l <= nupper; l++) {
-            mx = l+nx;
-            x0 = y0*rho1d[0][l];
-            ekx -= x0*vdx_brick[mz][my][mx];
-            eky -= x0*vdy_brick[mz][my][mx];
-            ekz -= x0*vdz_brick[mz][my][mx];
+        ekx = eky = ekz = ZEROF;
+        for (n = nlower; n <= nupper; n++) {
+          mz = n+nz;
+          z0 = rho1d[2][n];
+          for (m = nlower; m <= nupper; m++) {
+            my = m+ny;
+            y0 = z0*rho1d[1][m];
+            for (l = nlower; l <= nupper; l++) {
+              mx = l+nx;
+              x0 = y0*rho1d[0][l];
+              ekx -= x0*vdx_brick[mz][my][mx];
+              eky -= x0*vdy_brick[mz][my][mx];
+              ekz -= x0*vdz_brick[mz][my][mx];
+            }
           }
         }
+
+        // convert E-field to force
+        const double qfactor = qqrd2e * scale * molFrameCharge[itype][s];
+
+        double force[3] = { qfactor*ekx, qfactor*eky, 0.0 };
+        if (slabflag != 2) force[2] = qfactor*ekz;
+
+        f[i][0] += force[0];
+        f[i][1] += force[1];
+
+        if (slabflag != 2) f[i][2] += force[2];
+
+        double torque[3];
+        MathExtra::cross3(labFrameSite, force, torque);
+        tor[i][0] += torque[0];
+        tor[i][1] += torque[1];
+        tor[i][2] += torque[2];
       }
-
-      // convert E-field to force
-      const double qfactor = qqrd2e * scale * molFrameCharge[itype][s];
-      double force[3] = { qfactor*ekx,
-        qfactor*eky,
-        0.0 };
-
-      if (slabflag != 2)
-        force[2] = qfactor*ekz;
-
-      f[i][0] += force[0];
-      f[i][1] += force[1];
-
-      if (slabflag != 2) {        
-        f[i][2] += force[2];
-      }
-
-      double torque[3];
-      MathExtra::cross3(labFrameSite, force, torque);
-      tor[i][0] += torque[0];
-      tor[i][1] += torque[1];
-      tor[i][2] += torque[2];
-
     }
   }
 
