@@ -11,10 +11,6 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-/* -------------------------------------------------------------------------
-   Contributing author: Matteo Ricci <matteoeghirotta@gmail.com>
---------------------------------------------------------------------------- */
-
 #ifdef PAIR_CLASS
 
 PairStyle(coul/long/offcentre,PairCoulLongOffcentre)
@@ -43,6 +39,7 @@ class PairCoulLongOffcentre : public Pair {
   virtual void read_restart_settings(FILE *);
   virtual double single(int, int, int, int, double, double, double, double &);
   void *extract(const char *, int &);
+  void compute_pair(int i, int j, int eflag);
 
  protected:
   double cut_coul,cut_coulsq;
