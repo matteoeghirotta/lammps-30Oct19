@@ -1,15 +1,15 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+http://lammps.sandia.gov, Sandia National Laboratories
+Steve Plimpton, sjplimp@sandia.gov
 
-   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
-   the GNU General Public License.
+Copyright (2003) Sandia Corporation.  Under the terms of Contract
+DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+certain rights in this software.  This software is distributed under
+the GNU General Public License.
 
-   See the README file in the top-level LAMMPS directory.
-   -------------------------------------------------------------------------*/
+See the README file in the top-level LAMMPS directory.
+-------------------------------------------------------------------------*/
 
 /* ----------------------------------------------------------------------
    Contributing author: Matteo Ricci
@@ -88,7 +88,6 @@ void PairCoulLongOffcentre::compute_pair(int i, int j, int eflag)
   int **firstneigh = list->firstneigh;
 
   int itype = type[i];
-  int jtype = type[j];
   int jnum = numneigh[i];
 
   double *iquat,*jquat;
@@ -111,6 +110,7 @@ void PairCoulLongOffcentre::compute_pair(int i, int j, int eflag)
   double factor_coul = special_coul[sbmask(j)];
   factor_coul = sameAtom ? 0.0 : factor_coul;
   j &= NEIGHMASK;
+  int jtype = type[j];
 
   // rotate site1 in lab frame
   double rotMat1[3][3];
@@ -266,7 +266,6 @@ void PairCoulLongOffcentre::compute(int eflag, int vflag)
   double *iquat,*jquat;
   double fforce[3],ttor[3],r12[3];
 
-
   if (eflag || vflag) ev_setup(eflag,vflag);
   else evflag = vflag_fdotr = 0;
 
@@ -389,19 +388,19 @@ void PairCoulLongOffcentre::settings(int narg, char **arg)
       // std::cout << "[PairCoulLongOffcentre] type " <<
       // 	type << " " << " site " << site
       // 					<< " pos "
-      // 					<< " " << molFrameSite[type][site][0] 
-      // 					<< " " << molFrameSite[type][site][1] 
-      // 					<< " " << molFrameSite[type][site][2] 
+      // 					<< " " << molFrameSite[type][site][0]
+      // 					<< " " << molFrameSite[type][site][1]
+      // 					<< " " << molFrameSite[type][site][2]
       // 					<< " charge "
       // 					<< " " << molFrameCharge[type][site]
       // 					<< " arg " << argcount
-      // 					<< std::endl;	  
+      // 					<< std::endl;
     }
 
     totsites += nsites[type];
   }
 
-  // check 
+  // check
   if (narg > argcount) {
     fprintf(stderr, "number of specified charges exceeds the declared %i\n",
             nCoulSites);
@@ -462,7 +461,7 @@ void PairCoulLongOffcentre::init_style()
 
   // insure use of KSpace long-range solver, set g_ewald
 
-  if (force->kspace == NULL) 
+  if (force->kspace == NULL)
     error->all(FLERR,"Pair style is incompatible with KSpace style");
   g_ewald = force->kspace->g_ewald;
 
@@ -554,7 +553,7 @@ void PairCoulLongOffcentre::init_tables()
       vtable[i] = qqrd2e/r * (derfc + EWALD_F*grij*expm2);
       if (rsq_lookup.f > cut_respa[2]*cut_respa[2]) {
         if (rsq_lookup.f < cut_respa[3]*cut_respa[3]) {
-          rsw = (r - cut_respa[2])/(cut_respa[3] - cut_respa[2]); 
+          rsw = (r - cut_respa[2])/(cut_respa[3] - cut_respa[2]);
           ftable[i] += qqrd2e/r * rsw*rsw*(3.0 - 2.0*rsw);
           ctable[i] = qqrd2e/r * rsw*rsw*(3.0 - 2.0*rsw);
         } else {
@@ -584,7 +583,7 @@ void PairCoulLongOffcentre::init_tables()
     }
   }
 
-  // get the delta values for the last table entries 
+  // get the delta values for the last table entries
   // tables are connected periodically between 0 and ntablem1
 
   drtable[ntablem1] = 1.0/(rtable[0] - rtable[ntablem1]);
@@ -596,23 +595,23 @@ void PairCoulLongOffcentre::init_tables()
     dptable[ntablem1] = ptable[0] - ptable[ntablem1];
   }
 
-  // get the correct delta values at itablemax    
+  // get the correct delta values at itablemax
   // smallest r is in bin itablemin
   // largest r is in bin itablemax, which is itablemin-1,
   //   or ntablem1 if itablemin=0
   // deltas at itablemax only needed if corresponding rsq < cut*cut
-  // if so, compute deltas between rsq and cut*cut 
+  // if so, compute deltas between rsq and cut*cut
 
   double f_tmp,c_tmp,e_tmp,p_tmp,v_tmp;
   itablemin = minrsq_lookup.i & ncoulmask;
-  itablemin >>= ncoulshiftbits;  
-  int itablemax = itablemin - 1; 
-  if (itablemin == 0) itablemax = ntablem1;     
+  itablemin >>= ncoulshiftbits;
+  int itablemax = itablemin - 1;
+  if (itablemin == 0) itablemax = ntablem1;
   rsq_lookup.i = itablemax << ncoulshiftbits;
   rsq_lookup.i |= maskhi;
 
   if (rsq_lookup.f < cut_coulsq) {
-    rsq_lookup.f = cut_coulsq;  
+    rsq_lookup.f = cut_coulsq;
     r = sqrtf(rsq_lookup.f);
     grij = g_ewald * r;
     expm2 = exp(-grij*grij);
@@ -630,7 +629,7 @@ void PairCoulLongOffcentre::init_tables()
       v_tmp = qqrd2e/r * (derfc + EWALD_F*grij*expm2);
       if (rsq_lookup.f > cut_respa[2]*cut_respa[2]) {
         if (rsq_lookup.f < cut_respa[3]*cut_respa[3]) {
-          rsw = (r - cut_respa[2])/(cut_respa[3] - cut_respa[2]); 
+          rsw = (r - cut_respa[2])/(cut_respa[3] - cut_respa[2]);
           f_tmp += qqrd2e/r * rsw*rsw*(3.0 - 2.0*rsw);
           c_tmp = qqrd2e/r * rsw*rsw*(3.0 - 2.0*rsw);
         } else {
@@ -640,14 +639,14 @@ void PairCoulLongOffcentre::init_tables()
       }
     }
 
-    drtable[itablemax] = 1.0/(rsq_lookup.f - rtable[itablemax]);   
+    drtable[itablemax] = 1.0/(rsq_lookup.f - rtable[itablemax]);
     dftable[itablemax] = f_tmp - ftable[itablemax];
     dctable[itablemax] = c_tmp - ctable[itablemax];
     detable[itablemax] = e_tmp - etable[itablemax];
     if (cut_respa) {
       dvtable[itablemax] = v_tmp - vtable[itablemax];
       dptable[itablemax] = p_tmp - ptable[itablemax];
-    }   
+    }
   }
 }
 
@@ -778,7 +777,7 @@ double PairCoulLongOffcentre::single(int i, int j, int itype, int jtype,
     if (nsites[jtype] > 0) {
       jquat = bonus[ellipsoid[j]].quat;
       MathExtra::quat_to_mat(jquat, rotMat2);
-      //this was originally here but why not quat_to_mat as for site 1? 
+      //this was originally here but why not quat_to_mat as for site 1?
       //MathExtra::quat_to_mat_trans(jquat, rotMat2);
     }
 
