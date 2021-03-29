@@ -1,15 +1,15 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+http://lammps.sandia.gov, Sandia National Laboratories
+Steve Plimpton, sjplimp@sandia.gov
 
-   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under
-   the GNU General Public License.
+Copyright (2003) Sandia Corporation.  Under the terms of Contract
+DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+certain rights in this software.  This software is distributed under
+the GNU General Public License.
 
-   See the README file in the top-level LAMMPS directory.
-   -------------------------------------------------------------------------*/
+See the README file in the top-level LAMMPS directory.
+-------------------------------------------------------------------------*/
 
 /* ----------------------------------------------------------------------
    Contributing author: Matteo Ricci
@@ -37,20 +37,20 @@
 using namespace LAMMPS_NS;
 
 static const char cite_user_molc_package[] =
-    "USER-MOLC package:\n\n"
-    "Article{C9CP04120F,\n"
-    "  author = {Ricci, Matteo and Roscioni, Otello Maria and Querciagrossa, Lara and Zannoni, Claudio},\n"
-    "  title  = {MOLC. A reversible coarse grained approach using anisotropic beads for the modelling of organic functional materials},\n"
-    "  journal  = {Phys. Chem. Chem. Phys.},\n"
-    "  year  = 2019,\n"
-    "  volume = 21,\n"
-    "  issue  = 47,\n"
-    "  pages  = {26195-26211},\n"
-    "  publisher = {The Royal Society of Chemistry},\n"
-    "  doi  = {10.1039/C9CP04120F},\n"
-    "  url  = {http://dx.doi.org/10.1039/C9CP04120F},\n"
-    "  abstract  = {We describe the development and implementation of a coarse grained (CG) modelling approach where complex organic molecules, and particularly the \\pi-conjugated ones often employed in organic electronics, are modelled in terms of connected sets of attractive--repulsive biaxial Gay--Berne ellipsoidal beads. The CG model is aimed at reproducing realistically large scale morphologies (e.g. up to 100 nm thick films) for the materials involved, while being able to generate, with a back-mapping procedure, atomistic coordinates suitable, with limited effort, to be applied for charge transport calculations. Detailed methodology and an application to the common hole transporter material \\alpha-NPD are provided.}\n"
-   "}\n\n";
+"USER-MOLC package:\n\n"
+"Article{C9CP04120F,\n"
+"  author = {Ricci, Matteo and Roscioni, Otello Maria and Querciagrossa, Lara and Zannoni, Claudio},\n"
+"  title  = {MOLC. A reversible coarse grained approach using anisotropic beads for the modelling of organic functional materials},\n"
+"  journal  = {Phys. Chem. Chem. Phys.},\n"
+"  year  = 2019,\n"
+"  volume = 21,\n"
+"  issue  = 47,\n"
+"  pages  = {26195-26211},\n"
+"  publisher = {The Royal Society of Chemistry},\n"
+"  doi  = {10.1039/C9CP04120F},\n"
+"  url  = {http://dx.doi.org/10.1039/C9CP04120F},\n"
+"  abstract  = {We describe the development and implementation of a coarse grained (CG) modelling approach where complex organic molecules, and particularly the \\pi-conjugated ones often employed in organic electronics, are modelled in terms of connected sets of attractive--repulsive biaxial Gay--Berne ellipsoidal beads. The CG model is aimed at reproducing realistically large scale morphologies (e.g. up to 100 nm thick films) for the materials involved, while being able to generate, with a back-mapping procedure, atomistic coordinates suitable, with limited effort, to be applied for charge transport calculations. Detailed methodology and an application to the common hole transporter material \\alpha-NPD are provided.}\n"
+"}\n\n";
 
 /* ---------------------------------------------------------------------- */
 
@@ -137,32 +137,32 @@ void BondEllipsoid::compute(int eflag, int vflag)
     MathExtra::quat_to_mat_trans(iquat, rotMat1);
 
     double x1[3] = { rotMat1[0][0],
-		     rotMat1[0][1],
-		     rotMat1[0][2] };
+      rotMat1[0][1],
+      rotMat1[0][2] };
 
     double y1[3] = { rotMat1[1][0],
-		     rotMat1[1][1],
-		     rotMat1[1][2] };
+      rotMat1[1][1],
+      rotMat1[1][2] };
 
     double z1[3] = { rotMat1[2][0],
-		     rotMat1[2][1],
-		     rotMat1[2][2] };
+      rotMat1[2][1],
+      rotMat1[2][2] };
 
     jquat = bonus[ellipsoid[i2]].quat;
     double rotMat2[3][3];
     MathExtra::quat_to_mat_trans(jquat, rotMat2);
 
     double x2[3] = { rotMat2[0][0],
-		     rotMat2[0][1],
-		     rotMat2[0][2] };
+      rotMat2[0][1],
+      rotMat2[0][2] };
 
     double y2[3] = { rotMat2[1][0],
-		     rotMat2[1][1],
-		     rotMat2[1][2] };
+      rotMat2[1][1],
+      rotMat2[1][2] };
 
     double z2[3] = { rotMat2[2][0],
-		     rotMat2[2][1],
-		     rotMat2[2][2] };
+      rotMat2[2][1],
+      rotMat2[2][2] };
 
     delx = x[i1][0] - x[i2][0];
     dely = x[i1][1] - x[i2][1];
@@ -245,10 +245,10 @@ void BondEllipsoid::compute(int eflag, int vflag)
     std::vector<BondPotential*> bps = bondPotSet[btype];
 
     if (verbose) {
-      fprintf(hdebug_val, "%li %i ", update->ntimestep, comm->me);
-      fprintf(hdebug_ene, "%li %i ", update->ntimestep, comm->me);
-      fprintf(hdebug_gra, "%li %i ", update->ntimestep, comm->me);
-      fprintf(hdebug_num, "%li %i ", update->ntimestep, comm->me);
+      fprintf(hdebug_val, "%lli %i ", update->ntimestep, comm->me);
+      fprintf(hdebug_ene, "%lli %i ", update->ntimestep, comm->me);
+      fprintf(hdebug_gra, "%lli %i ", update->ntimestep, comm->me);
+      fprintf(hdebug_num, "%lli %i ", update->ntimestep, comm->me);
 
       fprintf(hdebug_val, "%i %i %i ", btype, tag[i1], tag[i2]);
       fprintf(hdebug_ene, "%i %i %i ", btype, tag[i1], tag[i2]);
@@ -266,115 +266,115 @@ void BondEllipsoid::compute(int eflag, int vflag)
       double fbrsq = fbond/rsq;
 
       if (bp->contribute_to_virial()) {
-	if (i == 0) {
-	  fbond_r = fbond/r;
-	} else if (i == 10) {
-	  double n[3];
-	  MathExtra::cross3(x1, rv, n);
-	  delx_angx1 = n[0];
-	  dely_angx1 = n[1];
-	  delz_angx1 = n[2];
-	  fbond_angx1 = fbrsq;
-	} else if (i == 11) {
-	  double n[3];
-	  MathExtra::cross3(y1, rv, n);
-	  delx_angy1 = n[0];
-	  dely_angy1 = n[1];
-	  delz_angy1 = n[2];
-	  fbond_angy1 = fbrsq;
-	} else if (i == 12) {
-	  double n[3];
-	  MathExtra::cross3(z1, rv, n);
-	  delx_angz1 = n[0];
-	  dely_angz1 = n[1];
-	  delz_angz1 = n[2];
-	  fbond_angz1 = fbrsq;
-	} else if (i == 13) {
-	  double n[3];
-	  MathExtra::cross3(rv, x2, n);
-	  delx_angx2 = n[0];
-	  dely_angx2 = n[1];
-	  delz_angx2 = n[2];
-	  fbond_angx2 = fbrsq;
-	} else if (i == 14) {
-	  double n[3];
-	  MathExtra::cross3(rv, y2, n);
-	  delx_angy2 = n[0];
-	  dely_angy2 = n[1];
-	  delz_angy2 = n[2];
-	  fbond_angy2 = fbrsq;
-	} else if (i == 15) {
-	  double n[3];
-	  MathExtra::cross3(rv, z2, n);
-	  delx_angz2 = n[0];
-	  dely_angz2 = n[1];
-	  delz_angz2 = n[2];
-	  fbond_angz2 = fbrsq;
-	}
+        if (i == 0) {
+          fbond_r = fbond/r;
+        } else if (i == 10) {
+          double n[3];
+          MathExtra::cross3(x1, rv, n);
+          delx_angx1 = n[0];
+          dely_angx1 = n[1];
+          delz_angx1 = n[2];
+          fbond_angx1 = fbrsq;
+        } else if (i == 11) {
+          double n[3];
+          MathExtra::cross3(y1, rv, n);
+          delx_angy1 = n[0];
+          dely_angy1 = n[1];
+          delz_angy1 = n[2];
+          fbond_angy1 = fbrsq;
+        } else if (i == 12) {
+          double n[3];
+          MathExtra::cross3(z1, rv, n);
+          delx_angz1 = n[0];
+          dely_angz1 = n[1];
+          delz_angz1 = n[2];
+          fbond_angz1 = fbrsq;
+        } else if (i == 13) {
+          double n[3];
+          MathExtra::cross3(rv, x2, n);
+          delx_angx2 = n[0];
+          dely_angx2 = n[1];
+          delz_angx2 = n[2];
+          fbond_angx2 = fbrsq;
+        } else if (i == 14) {
+          double n[3];
+          MathExtra::cross3(rv, y2, n);
+          delx_angy2 = n[0];
+          dely_angy2 = n[1];
+          delz_angy2 = n[2];
+          fbond_angy2 = fbrsq;
+        } else if (i == 15) {
+          double n[3];
+          MathExtra::cross3(rv, z2, n);
+          delx_angz2 = n[0];
+          dely_angz2 = n[1];
+          delz_angz2 = n[2];
+          fbond_angz2 = fbrsq;
+        }
       }
 
       if (isnan(fbond)) {
-	printf("bond %s has NAN fbond var: %g index %i, bond atoms %i %i "
-	       "bond type %i\n",
-	       bp->get_name().c_str(), var[i], i, tag[i1], tag[i2], btype);
-	fflush(stdout);
-	exit(1);
+        printf("bond %s has NAN fbond var: %g index %i, bond atoms %i %i "
+               "bond type %i\n",
+               bp->get_name().c_str(), var[i], i, tag[i1], tag[i2], btype);
+        fflush(stdout);
+        exit(1);
       }
 
       if (verbose) {
-	switch (i) {
-	case(0):
-	  fprintf(hdebug_val, "%f ", r);
-	  break;
-	case(1):
-	  fprintf(hdebug_val, "%f ", dxx);
-	  break;
-	case(2):
-	  fprintf(hdebug_val, "%f ", dxy);
-	  break;
-	case(3):
-	  fprintf(hdebug_val, "%f ", dxz);
-	  break;
-	case(4):
-	  fprintf(hdebug_val, "%f ", dyx);
-	  break;
-	case(5):
-	  fprintf(hdebug_val, "%f ", dyy);
-	  break;
-	case(6):
-	  fprintf(hdebug_val, "%f ", dyz);
-	  break;
-	case(7):
-	  fprintf(hdebug_val, "%f ", dzx);
-	  break;
-	case(8):
-	  fprintf(hdebug_val, "%f ", dzy);
-	  break;
-	case(9):
-	  fprintf(hdebug_val, "%f ", dzz);
-	  break;
-	case(10):
-	  fprintf(hdebug_val, "%f ", dxr);
-	  break;
-	case(11):
-	  fprintf(hdebug_val, "%f ", dyr);
-	  break;
-	case(12):
-	  fprintf(hdebug_val, "%f ", dzr);
-	  break;
-	case(13):
-	  fprintf(hdebug_val, "%f ", drx);
-	  break;
-	case(14):
-	  fprintf(hdebug_val, "%f ", dry);
-	  break;
-	case(15):
-	  fprintf(hdebug_val, "%f ", drz);
-	  break;
-	}
+        switch (i) {
+        case(0):
+          fprintf(hdebug_val, "%f ", r);
+          break;
+        case(1):
+          fprintf(hdebug_val, "%f ", dxx);
+          break;
+        case(2):
+          fprintf(hdebug_val, "%f ", dxy);
+          break;
+        case(3):
+          fprintf(hdebug_val, "%f ", dxz);
+          break;
+        case(4):
+          fprintf(hdebug_val, "%f ", dyx);
+          break;
+        case(5):
+          fprintf(hdebug_val, "%f ", dyy);
+          break;
+        case(6):
+          fprintf(hdebug_val, "%f ", dyz);
+          break;
+        case(7):
+          fprintf(hdebug_val, "%f ", dzx);
+          break;
+        case(8):
+          fprintf(hdebug_val, "%f ", dzy);
+          break;
+        case(9):
+          fprintf(hdebug_val, "%f ", dzz);
+          break;
+        case(10):
+          fprintf(hdebug_val, "%f ", dxr);
+          break;
+        case(11):
+          fprintf(hdebug_val, "%f ", dyr);
+          break;
+        case(12):
+          fprintf(hdebug_val, "%f ", dzr);
+          break;
+        case(13):
+          fprintf(hdebug_val, "%f ", drx);
+          break;
+        case(14):
+          fprintf(hdebug_val, "%f ", dry);
+          break;
+        case(15):
+          fprintf(hdebug_val, "%f ", drz);
+          break;
+        }
 
-	fprintf(hdebug_ene, "%f ", p.first);
-	fprintf(hdebug_gra, "%f ", -p.second);
+        fprintf(hdebug_ene, "%f ", p.first);
+        fprintf(hdebug_gra, "%f ", -p.second);
       }
 
       // apply force to each of 2 atoms
@@ -384,23 +384,23 @@ void BondEllipsoid::compute(int eflag, int vflag)
       bpv bpt2 = bp->potential()->torque2(fbond, v1[i], v2[i]);
 
       if (!use_numeric_gradients) {
-	if (newton_bond || (i1 < nlocal)) {
-	  f[i1][0] += bpf1[0];
-	  f[i1][1] += bpf1[1];
-	  f[i1][2] += bpf1[2];
-	  tor[i1][0] += bpt1[0];
-	  tor[i1][1] += bpt1[1];
-	  tor[i1][2] += bpt1[2];
-	}
+        if (newton_bond || (i1 < nlocal)) {
+          f[i1][0] += bpf1[0];
+          f[i1][1] += bpf1[1];
+          f[i1][2] += bpf1[2];
+          tor[i1][0] += bpt1[0];
+          tor[i1][1] += bpt1[1];
+          tor[i1][2] += bpt1[2];
+        }
 
-	if (newton_bond || (i2 < nlocal)) {
-	  f[i2][0] += bpf2[0];
-	  f[i2][1] += bpf2[1];
-	  f[i2][2] += bpf2[2];
-	  tor[i2][0] += bpt2[0];
-	  tor[i2][1] += bpt2[1];
-	  tor[i2][2] += bpt2[2];
-	}
+        if (newton_bond || (i2 < nlocal)) {
+          f[i2][0] += bpf2[0];
+          f[i2][1] += bpf2[1];
+          f[i2][2] += bpf2[2];
+          tor[i2][0] += bpt2[0];
+          tor[i2][1] += bpt2[1];
+          tor[i2][2] += bpt2[2];
+        }
       }
     }
 
@@ -411,40 +411,40 @@ void BondEllipsoid::compute(int eflag, int vflag)
       bpv bpt2 = torque2_numeric(btype, i1, i2, delta_move);
 
       if (verbose) {
-	fprintf(hdebug_num, " %g %g %g %g %g %g %g %g %g %g %g %g %g",
-		total_ene,
-		bpf1[0],
-		bpf1[1],
-		bpf1[2],
-		bpf2[0],
-		bpf2[1],
-		bpf2[2],
-		bpt1[0],
-		bpt1[1],
-		bpt1[2],
-		bpt2[0],
-		bpt2[1],
-		bpt2[2]);
+        fprintf(hdebug_num, " %g %g %g %g %g %g %g %g %g %g %g %g %g",
+                total_ene,
+                bpf1[0],
+                bpf1[1],
+                bpf1[2],
+                bpf2[0],
+                bpf2[1],
+                bpf2[2],
+                bpt1[0],
+                bpt1[1],
+                bpt1[2],
+                bpt2[0],
+                bpt2[1],
+                bpt2[2]);
       }
 
       if (use_numeric_gradients) {
-	if (newton_bond || (i1 < nlocal)) {
-	  f[i1][0] += bpf1[0];
-	  f[i1][1] += bpf1[1];
-	  f[i1][2] += bpf1[2];
-	  tor[i1][0] += bpt1[0];
-	  tor[i1][1] += bpt1[1];
-	  tor[i1][2] += bpt1[2];
-	}
+        if (newton_bond || (i1 < nlocal)) {
+          f[i1][0] += bpf1[0];
+          f[i1][1] += bpf1[1];
+          f[i1][2] += bpf1[2];
+          tor[i1][0] += bpt1[0];
+          tor[i1][1] += bpt1[1];
+          tor[i1][2] += bpt1[2];
+        }
 
-	if (newton_bond || (i2 < nlocal)) {
-	  f[i2][0] += bpf2[0];
-	  f[i2][1] += bpf2[1];
-	  f[i2][2] += bpf2[2];
-	  tor[i2][0] += bpt2[0];
-	  tor[i2][1] += bpt2[1];
-	  tor[i2][2] += bpt2[2];
-	}
+        if (newton_bond || (i2 < nlocal)) {
+          f[i2][0] += bpf2[0];
+          f[i2][1] += bpf2[1];
+          f[i2][2] += bpf2[2];
+          tor[i2][0] += bpt2[0];
+          tor[i2][1] += bpt2[1];
+          tor[i2][2] += bpt2[2];
+        }
       }
     }
 
@@ -457,21 +457,21 @@ void BondEllipsoid::compute(int eflag, int vflag)
     if (eflag) ebond = total_ene;
 
     if (evflag) ev_tally_ang(i1,i2,nlocal,newton_bond,
-    			     ebond,
-    			     fbond_r,
-    			     fbond_angx1,
-    			     fbond_angy1,
-    			     fbond_angz1,
-    			     fbond_angx2,
-    			     fbond_angy2,
-    			     fbond_angz2,
-    			     delx,dely,delz,
-    			     delx_angx1,dely_angx1,delz_angx1,
-    			     delx_angy1,dely_angy1,delz_angy1,
-    			     delx_angz1,dely_angz1,delz_angz1,
-    			     delx_angx2,dely_angx2,delz_angx2,
-    			     delx_angy2,dely_angy2,delz_angy2,
-    			     delx_angz2,dely_angz2,delz_angz2);
+                             ebond,
+                             fbond_r,
+                             fbond_angx1,
+                             fbond_angy1,
+                             fbond_angz1,
+                             fbond_angx2,
+                             fbond_angy2,
+                             fbond_angz2,
+                             delx,dely,delz,
+                             delx_angx1,dely_angx1,delz_angx1,
+                             delx_angy1,dely_angy1,delz_angy1,
+                             delx_angz1,dely_angz1,delz_angz1,
+                             delx_angx2,dely_angx2,delz_angx2,
+                             delx_angy2,dely_angy2,delz_angy2,
+                             delx_angz2,dely_angz2,delz_angz2);
   }
 }
 
@@ -527,16 +527,16 @@ void BondEllipsoid::settings(int narg, char **arg)
     hdebug_num = fopen(hfilename("bond_ellipsoid_num"), "w");
 
     fprintf(hdebug_val, "# ts me type i1 i2  rr xx xy xz yx yy yz zx zy zz "
-	    "xr yr zr rx ry rz\n");
+            "xr yr zr rx ry rz\n");
 
     fprintf(hdebug_ene, "# ts me type i1 i2  rr xx xy xz yx yy yz zx zy zz "
-	    "xr yr zr rx ry rz\n");
+            "xr yr zr rx ry rz\n");
 
     fprintf(hdebug_gra, "# ts me type i1 i2  rr xx xy xz yx yy yz zx zy zz "
-	    "xr yr zr rx ry rz\n");
+            "xr yr zr rx ry rz\n");
 
     fprintf(hdebug_num, "# ts me ene nfx1 nfy1 nfz1 nfx2 nfy2 nfz2 "
-	    "ntx1 nty1 ntz1 ntx2 nty2 ntz2 \n");
+            "ntx1 nty1 ntz1 ntx2 nty2 ntz2 \n");
   }
 }
 
@@ -558,7 +558,7 @@ void BondEllipsoid::coeff(int narg, char **arg)
   for (int i = 0; i < pterms; ++i) {
     if (narg < argcount+1) {
       printf("unsufficient terms specified %i %i %i %i\n.Abort\n",
-	     narg, argcount+1, pterms+1, i);
+             narg, argcount+1, pterms+1, i);
       exit(1);
     }
 
@@ -566,8 +566,8 @@ void BondEllipsoid::coeff(int narg, char **arg)
 
     if (!factory.find(ptype)) {
       printf("cannot find potential type %s for term %i bond coeff %s\n."
-	     "Abort\n",
-	     ptype.c_str(), i, arg[0]);
+             "Abort\n",
+             ptype.c_str(), i, arg[0]);
       exit(1);
     }
 
@@ -577,7 +577,7 @@ void BondEllipsoid::coeff(int narg, char **arg)
 
     if (narg < argcount + bp->nparams()) {
       printf("unsufficient parameters specified for %s\n.Abort\n",
-	     ptype.c_str());
+             ptype.c_str());
       exit(1);
     }
 
@@ -651,9 +651,9 @@ void BondEllipsoid::write_data(FILE *fp)
 /* ---------------------------------------------------------------------- */
 
 double BondEllipsoid::single(int btype,
-			     double rsq_unused,
-			     int i1, int i2,
-			     double &fforce)
+                             double rsq_unused,
+                             int i1, int i2,
+                             double &fforce)
 {
   double delx,dely,delz,ebond(0.0),fbond(0.0);
   double r, rsq;
@@ -671,32 +671,32 @@ double BondEllipsoid::single(int btype,
   MathExtra::quat_to_mat_trans(iquat, rotMat1);
 
   double x1[3] = { rotMat1[0][0],
-		   rotMat1[0][1],
-		   rotMat1[0][2] };
+    rotMat1[0][1],
+    rotMat1[0][2] };
 
   double y1[3] = { rotMat1[1][0],
-		   rotMat1[1][1],
-		   rotMat1[1][2] };
+    rotMat1[1][1],
+    rotMat1[1][2] };
 
   double z1[3] = { rotMat1[2][0],
-		   rotMat1[2][1],
-		   rotMat1[2][2] };
+    rotMat1[2][1],
+    rotMat1[2][2] };
 
   jquat = bonus[ellipsoid[i2]].quat;
   double rotMat2[3][3];
   MathExtra::quat_to_mat_trans(jquat, rotMat2);
 
   double x2[3] = { rotMat2[0][0],
-		   rotMat2[0][1],
-		   rotMat2[0][2] };
+    rotMat2[0][1],
+    rotMat2[0][2] };
 
   double y2[3] = { rotMat2[1][0],
-		   rotMat2[1][1],
-		   rotMat2[1][2] };
+    rotMat2[1][1],
+    rotMat2[1][2] };
 
   double z2[3] = { rotMat2[2][0],
-		   rotMat2[2][1],
-		   rotMat2[2][2] };
+    rotMat2[2][1],
+    rotMat2[2][2] };
 
   delx = x[i1][0] - x[i2][0];
   dely = x[i1][1] - x[i2][1];
@@ -791,16 +791,16 @@ double BondEllipsoid::single(int btype,
 
     if (isnan(fbond)) {
       printf("bond %s has NAN fbond %g %i\n",
-	     bp->get_name().c_str(), var[i], i);
+             bp->get_name().c_str(), var[i], i);
 
       printf("BondEllipsoid::compute axes1\n %f %f %f\n %f %f %f\n %f %f %f\n",
-	     x1[0], x1[1], x1[2],
-	     y1[0], y1[1], y1[2],
-	     z1[0], z1[1], z1[2]);
+             x1[0], x1[1], x1[2],
+             y1[0], y1[1], y1[2],
+             z1[0], z1[1], z1[2]);
       printf("BondEllipsoid::compute axes2\n %f %f %f\n %f %f %f\n %f %f %f\n",
-	     x2[0], x2[1], x2[2],
-	     y2[0], y2[1], y2[2],
-	     z2[0], z2[1], z2[2]);
+             x2[0], x2[1], x2[2],
+             y2[0], y2[1], y2[2],
+             z2[0], z2[1], z2[2]);
 
       fflush(stdout);
       exit(1);
@@ -814,8 +814,8 @@ double BondEllipsoid::single(int btype,
 
 std::vector<double>
 BondEllipsoid::force1_numeric(int btype,
-			      int atom1, int atom2,
-			      double delta_move) {
+                              int atom1, int atom2,
+                              double delta_move) {
   double x1save,y1save,z1save;
   double delx,dely,delz,rsq;
   double **x = atom->x;
@@ -832,8 +832,8 @@ BondEllipsoid::force1_numeric(int btype,
   rsq = delx*delx + dely*dely + delz*delz;
 
   double ene_comp_trasl_1[3][2] = { { 0.0, 0.0 },
-				    { 0.0, 0.0 },
-				    { 0.0, 0.0 } };
+    { 0.0, 0.0 },
+    { 0.0, 0.0 } };
 
   for (int comp = 0; comp < 3; comp++) {
     for (int delta_sign = -1; delta_sign < 2; delta_sign += 2) {
@@ -844,7 +844,7 @@ BondEllipsoid::force1_numeric(int btype,
       x[atom1][2] = z1save + delta*(comp == 2 ? 1.0 : 0);
 
       if (btype > 0)
-	eng = bond->single(btype,rsq,atom1,atom2,fbond);
+        eng = bond->single(btype,rsq,atom1,atom2,fbond);
       else eng = fbond = 0.0;
 
       if (delta_sign == -1)     ene_comp_trasl_1[comp][0] = eng;
@@ -868,8 +868,8 @@ BondEllipsoid::force1_numeric(int btype,
 
 std::vector<double>
 BondEllipsoid::force2_numeric(int btype,
-			      int atom1, int atom2,
-			      double delta_move) {
+                              int atom1, int atom2,
+                              double delta_move) {
   double x2save,y2save,z2save;
   double delx,dely,delz,rsq;
   double **x = atom->x;
@@ -886,8 +886,8 @@ BondEllipsoid::force2_numeric(int btype,
   rsq = delx*delx + dely*dely + delz*delz;
 
   double ene_comp_trasl_2[3][2] = { { 0.0, 0.0 },
-				    { 0.0, 0.0 },
-				    { 0.0, 0.0 } };
+    { 0.0, 0.0 },
+    { 0.0, 0.0 } };
 
   for (int comp = 0; comp < 3; comp++) {
     for (int delta_sign = -1; delta_sign < 2; delta_sign += 2) {
@@ -898,7 +898,7 @@ BondEllipsoid::force2_numeric(int btype,
       x[atom2][2] = z2save + delta*(comp == 2 ? 1.0 : 0);
 
       if (btype > 0)
-	eng = bond->single(btype,rsq,atom1,atom2,fbond);
+        eng = bond->single(btype,rsq,atom1,atom2,fbond);
       else eng = fbond = 0.0;
 
       if (delta_sign == -1)     ene_comp_trasl_2[comp][0] = eng;
@@ -922,8 +922,8 @@ BondEllipsoid::force2_numeric(int btype,
 
 std::vector<double>
 BondEllipsoid::torque1_numeric(int btype,
-			       int atom1, int atom2,
-			       double delta_move) {
+                               int atom1, int atom2,
+                               double delta_move) {
   AtomVecEllipsoid::Bonus *bonus = avec->bonus;
   int *ellipsoid = atom->ellipsoid;
   Bond *bond = force->bond;
@@ -934,8 +934,8 @@ BondEllipsoid::torque1_numeric(int btype,
   double q1save[4] = {quat1[0], quat1[1], quat1[2], quat1[3]};
 
   double ene_comp_rot_1[3][2] = { { 0.0, 0.0 },
-				  { 0.0, 0.0 },
-				  { 0.0, 0.0 } };
+    { 0.0, 0.0 },
+    { 0.0, 0.0 } };
 
   for (int comp = 0; comp < 3; comp++) {
     runit[0] = comp == 0 ? 1.0 : 0.0;
@@ -975,8 +975,8 @@ BondEllipsoid::torque1_numeric(int btype,
 
 std::vector<double>
 BondEllipsoid::torque2_numeric(int btype,
-			       int atom1, int atom2,
-			       double delta_move) {
+                               int atom1, int atom2,
+                               double delta_move) {
   AtomVecEllipsoid::Bonus *bonus = avec->bonus;
   int *ellipsoid = atom->ellipsoid;
   Bond *bond = force->bond;
@@ -987,8 +987,8 @@ BondEllipsoid::torque2_numeric(int btype,
   double q2save[4] = {quat2[0], quat2[1], quat2[2], quat2[3]};
 
   double ene_comp_rot_2[3][2] = { { 0.0, 0.0 },
-				  { 0.0, 0.0 },
-				  { 0.0, 0.0 } };
+    { 0.0, 0.0 },
+    { 0.0, 0.0 } };
 
   for (int comp = 0; comp < 3; comp++) {
     runit[0] = comp == 0 ? 1.0 : 0.0;
