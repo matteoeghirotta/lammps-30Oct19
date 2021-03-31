@@ -205,34 +205,36 @@ void PairCoulLongOffcentre::compute_pair(int i, int j, int eflag)
           }
         }
 
-        double fpair = forcecoul * r2inv;
+        if (!sameAtom) {
+          double fpair = forcecoul * r2inv;
 
-        fforce[0] = r12[0]*fpair; ///r12n;
-        fforce[1] = r12[1]*fpair; ///r12n;
-        fforce[2] = r12[2]*fpair; ///r12n;
+          fforce[0] = r12[0]*fpair; ///r12n;
+          fforce[1] = r12[1]*fpair; ///r12n;
+          fforce[2] = r12[2]*fpair; ///r12n;
 
-        // F_parallel = F_tot . r_normalized
-        f[i][0] += fforce[0];
-        f[i][1] += fforce[1];
-        f[i][2] += fforce[2];
-
-        // Torque = r x F_tot
-        // torque on 1 = -pos1 x grad_pos1
-        MathExtra::cross3(labFrameSite1, fforce, ttor);
-        tor[i][0] += ttor[0];
-        tor[i][1] += ttor[1];
-        tor[i][2] += ttor[2];
-
-        if (newton_pair || j < nlocal) {
           // F_parallel = F_tot . r_normalized
-          f[j][0] -= fforce[0]; ///r12n;
-          f[j][1] -= fforce[1]; ///r12n;
-          f[j][2] -= fforce[2]; ///r12n;
-          MathExtra::cross3(labFrameSite2, fforce, ttor);
+          f[i][0] += fforce[0];
+          f[i][1] += fforce[1];
+          f[i][2] += fforce[2];
 
-          tor[j][0] -= ttor[0];
-          tor[j][1] -= ttor[1];
-          tor[j][2] -= ttor[2];
+          // Torque = r x F_tot
+          // torque on 1 = -pos1 x grad_pos1
+          MathExtra::cross3(labFrameSite1, fforce, ttor);
+          tor[i][0] += ttor[0];
+          tor[i][1] += ttor[1];
+          tor[i][2] += ttor[2];
+
+          if (newton_pair || j < nlocal) {
+            // F_parallel = F_tot . r_normalized
+            f[j][0] -= fforce[0]; ///r12n;
+            f[j][1] -= fforce[1]; ///r12n;
+            f[j][2] -= fforce[2]; ///r12n;
+            MathExtra::cross3(labFrameSite2, fforce, ttor);
+
+            tor[j][0] -= ttor[0];
+            tor[j][1] -= ttor[1];
+            tor[j][2] -= ttor[2];
+          }
         }
 
         if (eflag) {
