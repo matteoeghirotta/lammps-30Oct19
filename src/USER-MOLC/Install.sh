@@ -65,3 +65,16 @@ action fix_temp_berendsen_asphere.h
 action fix_temp_berendsen_asphere.cpp atom_vec_ellipsoid.h
 action bond_molc.h
 action bond_molc.cpp
+action reader_native.cpp
+action read_dump.cpp
+action pair_gayberne_soft.h
+action pair_gayberne_soft.cpp
+action pair_gayberne.h
+action pair_gayberne.cpp
+action fix_rotate_q.h
+action fix_rotate_q.cpp
+action compute_pair_local_numeric.h
+action compute_pair_local_numeric.cpp
+action compute_group_group.cpp
+action compute_erotate_asphere_atom.h
+action compute_erotate_asphere_atom.cpp
