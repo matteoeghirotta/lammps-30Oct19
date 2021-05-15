@@ -1,14 +1,14 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+http://lammps.sandia.gov, Sandia National Laboratories
+Steve Plimpton, sjplimp@sandia.gov
 
-   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
-   the GNU General Public License.
+Copyright (2003) Sandia Corporation.  Under the terms of Contract
+DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+certain rights in this software.  This software is distributed under
+the GNU General Public License.
 
-   See the README file in the top-level LAMMPS directory.
+See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
 #ifdef PAIR_CLASS
@@ -22,42 +22,42 @@ PairStyle(coul/long/offcentre,PairCoulLongOffcentre)
 
 #include "pair.h"
 
-namespace LAMMPS_NS {
+  namespace LAMMPS_NS {
 
-class PairCoulLongOffcentre : public Pair {
- public:
-  PairCoulLongOffcentre(class LAMMPS *);
-  ~PairCoulLongOffcentre();
-  virtual void compute(int, int);
-  virtual void settings(int, char **);
-  void coeff(int, char **);
-  virtual void init_style();
-  double init_one(int, int);
-  void write_restart(FILE *);
-  void read_restart(FILE *);
-  virtual void write_restart_settings(FILE *);
-  virtual void read_restart_settings(FILE *);
-  virtual double single(int, int, int, int, double, double, double, double &);
-  void *extract(const char *, int &);
-  void compute_pair(int i, int j, int eflag);
+    class PairCoulLongOffcentre : public Pair {
+    public:
+      PairCoulLongOffcentre(class LAMMPS *);
+      ~PairCoulLongOffcentre();
+      virtual void compute(int, int);
+      virtual void settings(int, char **);
+      void coeff(int, char **);
+      virtual void init_style();
+      double init_one(int, int);
+      void write_restart(FILE *);
+      void read_restart(FILE *);
+      virtual void write_restart_settings(FILE *);
+      virtual void read_restart_settings(FILE *);
+      virtual double single(int, int, int, int, double, double, double, double &);
+      void *extract(const char *, int &);
+      void compute_pair(int i, int j, int eflag, int vflag);
 
- protected:
-  double cut_coul,cut_coulsq;
-  double *cut_respa;
-  double g_ewald;
-  double **scale;
+    protected:
+      double cut_coul,cut_coulsq;
+      double *cut_respa;
+      double g_ewald;
+      double **scale;
 
-  class AtomVecEllipsoid *avec;
-  int* nsites;
-  double ***molFrameSite;  // positions of sites
-  double **molFrameCharge;  // positions of sites
+      class AtomVecEllipsoid *avec;
+      int* nsites;
+      double ***molFrameSite;  // positions of sites
+      double **molFrameCharge;  // positions of sites
 
-  void allocate();
-  void init_tables();
-  void free_tables();
-};
+      void allocate();
+      void init_tables();
+      void free_tables();
+    };
 
-}
+  }
 
 #endif
 #endif
