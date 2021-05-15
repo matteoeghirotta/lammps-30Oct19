@@ -593,15 +593,15 @@ double PairGayBerne::gayberne_analytic(const int i,const int j,double a1[3][3],
   sigma12 = pow(0.5*sigma12,-0.5);
   double h12 = r-sigma12;
 
-  printf("g1 %i %i %f %f %f\n", i, j, g1[0][0], g1[0][1], g1[0][2]);
-  printf("g1 %i %i %f %f %f\n", i, j, g1[1][0], g1[1][1], g1[1][2]);
-  printf("g1 %i %i %f %f %f\n", i, j, g1[3][0], g1[2][1], g1[2][2]);
-  printf("g12 %i %i %f %f %f\n", i, j, g12[0][0], g12[0][1], g12[0][2]);
-  printf("g12 %i %i %f %f %f\n", i, j, g12[1][0], g12[1][1], g12[1][2]);
-  printf("g12 %i %i %f %f %f\n", i, j, g12[3][0], g12[2][1], g12[2][2]);
-  printf("r %f %f %f\n", r12hat[0], r12hat[1], r12hat[2]);
-  printf("h %f %f %f\n", tempv[0], tempv[1], tempv[2]);
-  printf("s %f %f\n", sigma12, r);
+  // printf("g1 %i %i %f %f %f\n", i, j, g1[0][0], g1[0][1], g1[0][2]);
+  // printf("g1 %i %i %f %f %f\n", i, j, g1[1][0], g1[1][1], g1[1][2]);
+  // printf("g1 %i %i %f %f %f\n", i, j, g1[3][0], g1[2][1], g1[2][2]);
+  // printf("g12 %i %i %f %f %f\n", i, j, g12[0][0], g12[0][1], g12[0][2]);
+  // printf("g12 %i %i %f %f %f\n", i, j, g12[1][0], g12[1][1], g12[1][2]);
+  // printf("g12 %i %i %f %f %f\n", i, j, g12[3][0], g12[2][1], g12[2][2]);
+  // printf("r %f %f %f\n", r12hat[0], r12hat[1], r12hat[2]);
+  // printf("h %f %f %f\n", tempv[0], tempv[1], tempv[2]);
+  // printf("s %f %f\n", sigma12, r);
 
   // energy
   // compute u_r
@@ -783,16 +783,16 @@ double PairGayBerne::gayberne_lj(const int i,const int j,double a1[3][3],
   sigma12 = pow(0.5*sigma12,-0.5);
   double h12 = r-sigma12;
 
-  printf("g1 %i %i %f %f %f\n", i, j, g1[0][0], g1[0][1], g1[0][2]);
-  printf("g1 %i %i %f %f %f\n", i, j, g1[1][0], g1[1][1], g1[1][2]);
-  printf("g1 %i %i %f %f %f\n", i, j, g1[3][0], g1[2][1], g1[2][2]);
-  printf("g12 %i %i %f %f %f\n", i, j, g12[0][0], g12[0][1], g12[0][2]);
-  printf("g12 %i %i %f %f %f\n", i, j, g12[1][0], g12[1][1], g12[1][2]);
-  printf("g12 %i %i %f %f %f\n", i, j, g12[3][0], g12[2][1], g12[2][2]);
-  printf("r %f %f %f\n", r12hat[0], r12hat[1], r12hat[2]);
-  printf("h %f %f %f\n", tempv[0], tempv[1], tempv[2]);
-  printf("f %f %f %f\n", shape2[type[j]][0], shape2[type[j]][1], shape2[type[j]][2]);
-  printf("s %f %f\n", sigma12, r);
+  // printf("g1 %i %i %f %f %f\n", i, j, g1[0][0], g1[0][1], g1[0][2]);
+  // printf("g1 %i %i %f %f %f\n", i, j, g1[1][0], g1[1][1], g1[1][2]);
+  // printf("g1 %i %i %f %f %f\n", i, j, g1[3][0], g1[2][1], g1[2][2]);
+  // printf("g12 %i %i %f %f %f\n", i, j, g12[0][0], g12[0][1], g12[0][2]);
+  // printf("g12 %i %i %f %f %f\n", i, j, g12[1][0], g12[1][1], g12[1][2]);
+  // printf("g12 %i %i %f %f %f\n", i, j, g12[3][0], g12[2][1], g12[2][2]);
+  // printf("r %f %f %f\n", r12hat[0], r12hat[1], r12hat[2]);
+  // printf("h %f %f %f\n", tempv[0], tempv[1], tempv[2]);
+  // printf("f %f %f %f\n", shape2[type[j]][0], shape2[type[j]][1], shape2[type[j]][2]);
+  // printf("s %f %f\n", sigma12, r);
 
   // energy
   // compute u_r
@@ -1019,7 +1019,7 @@ double PairGayBerne::single(int i, int j, int itype, int jtype, double rsq,
     MathExtra::diag_times3(shape2[jtype],a2,temp);
     MathExtra::transpose_times3(a2,temp,g2);
     one_eng = gayberne_lj(j,i,a2,b2,g2,r12,rsq,fforce,rtor);
-    printf("sphere-ell %f\n", one_eng);
+    // printf("sphere-ell %f\n", one_eng);
     ttor[0] = ttor[1] = ttor[2] = 0.0;
     break;
 
@@ -1031,7 +1031,7 @@ double PairGayBerne::single(int i, int j, int itype, int jtype, double rsq,
     MathExtra::diag_times3(shape2[itype],a1,temp);
     MathExtra::transpose_times3(a1,temp,g1);
     one_eng = gayberne_lj(i,j,a1,b1,g1,r12,rsq,fforce,ttor);
-    printf("ell-sphere %f %f\n", one_eng, sqrt(rsq));
+    // printf("ell-sphere %f %f\n", one_eng, sqrt(rsq));
     rtor[0] = rtor[1] = rtor[2] = 0.0;
     break;
 
