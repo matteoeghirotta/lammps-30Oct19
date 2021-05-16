@@ -77,12 +77,9 @@ PairCoulLongOffcentre::~PairCoulLongOffcentre()
 
 /* ---------------------------------------------------------------------- */
 
-void PairCoulLongOffcentre::compute_pair(int i, int j, int eflag, int vflag)
+void PairCoulLongOffcentre::compute_pair(int i, int j, int eflag, int vflag, int evflag)
 {
   double ecoul = 0.0;
-
-  if (eflag || vflag) ev_setup(eflag,vflag);
-  else evflag = vflag_fdotr = 0;
 
   bool sameAtom = i == j;
 
@@ -109,6 +106,7 @@ void PairCoulLongOffcentre::compute_pair(int i, int j, int eflag, int vflag)
   int newton_pair = force->newton_pair;
   double qqrd2e = force->qqrd2e;
   double *special_coul = force->special_coul;
+  double fpair = 0.0;
 
   double factor_coul = special_coul[sbmask(j)];
   factor_coul = sameAtom ? 0.0 : factor_coul;
@@ -208,9 +206,9 @@ void PairCoulLongOffcentre::compute_pair(int i, int j, int eflag, int vflag)
           }
         }
 
-        double fpair = forcecoul * r2inv;
-
         if (!sameAtom) {
+          fpair = forcecoul * r2inv;
+
           fforce[0] = r12[0]*fpair; ///r12n;
           fforce[1] = r12[1]*fpair; ///r12n;
           fforce[2] = r12[2]*fpair; ///r12n;
@@ -275,6 +273,9 @@ void PairCoulLongOffcentre::compute(int eflag, int vflag)
   double *iquat,*jquat;
   double fforce[3],ttor[3],r12[3];
 
+  if (eflag || vflag) ev_setup(eflag,vflag);
+  else evflag = vflag_fdotr = 0;
+
   AtomVecEllipsoid::Bonus *bonus = avec->bonus;
   int *ellipsoid = atom->ellipsoid;
   double **x = atom->x;
@@ -301,10 +302,10 @@ void PairCoulLongOffcentre::compute(int eflag, int vflag)
     // loop over neighbors
     for (jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
-      compute_pair(i, j, eflag, vflag);
+      compute_pair(i, j, eflag, vflag, evflag);
     }
     // long range self interactions of own charges
-    compute_pair(i, i, eflag, vflag);
+    compute_pair(i, i, eflag, vflag, evflag);
   }
 
   if (vflag_fdotr) virial_fdotr_compute();

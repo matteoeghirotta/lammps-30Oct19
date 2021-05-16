@@ -39,7 +39,7 @@ PairStyle(coul/long/offcentre,PairCoulLongOffcentre)
       virtual void read_restart_settings(FILE *);
       virtual double single(int, int, int, int, double, double, double, double &);
       void *extract(const char *, int &);
-      void compute_pair(int i, int j, int eflag, int vflag);
+      void compute_pair(int i, int j, int eflag, int vflag, int evflag);
 
     protected:
       double cut_coul,cut_coulsq;
