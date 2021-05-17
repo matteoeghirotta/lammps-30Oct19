@@ -60,22 +60,21 @@ enum{FORWARD_IK,FORWARD_AD,FORWARD_IK_PERATOM,FORWARD_AD_PERATOM};
 #define ZEROF 0.0
 #define ONEF  1.0
 #endif
-
 /* ---------------------------------------------------------------------- */
 
-PPPMOffcentre::PPPMOffcentre(LAMMPS *lmp) :
-  KSpace(lmp),
-  factors(NULL), density_brick(NULL), vdx_brick(NULL), vdy_brick(NULL),
-  vdz_brick(NULL), u_brick(NULL), v0_brick(NULL), v1_brick(NULL),
-  v2_brick(NULL), v3_brick(NULL), v4_brick(NULL), v5_brick(NULL),
-  greensfn(NULL), vg(NULL), fkx(NULL), fky(NULL), fkz(NULL), density_fft(NULL),
-  work1(NULL), work2(NULL), gf_b(NULL), rho1d(NULL), rho_coeff(NULL),
-  drho1d(NULL), drho_coeff(NULL), sf_precoeff1(NULL), sf_precoeff2(NULL),
-  sf_precoeff3(NULL), sf_precoeff4(NULL), sf_precoeff5(NULL),
-  sf_precoeff6(NULL), acons(NULL), density_A_brick(NULL), density_B_brick(NULL),
-  density_A_fft(NULL), density_B_fft(NULL), fft1(NULL), fft2(NULL),
-  ncharges(0), remap(NULL), cg(NULL), cg_peratom(NULL), part2grid(NULL), boxlo(NULL) {
-    peratom_allocate_flag = 0; group_allocate_flag = 0;
+PPPMOffcentre::PPPMOffcentre(LAMMPS *lmp) : KSpace(lmp),
+  factors(NULL), density_brick(NULL), vdx_brick(NULL), vdy_brick(NULL), vdz_brick(NULL),
+  u_brick(NULL), v0_brick(NULL), v1_brick(NULL), v2_brick(NULL), v3_brick(NULL),
+  v4_brick(NULL), v5_brick(NULL), greensfn(NULL), vg(NULL), fkx(NULL), fky(NULL),
+  fkz(NULL), density_fft(NULL), work1(NULL), work2(NULL), gf_b(NULL), rho1d(NULL),
+  rho_coeff(NULL), drho1d(NULL), drho_coeff(NULL), sf_precoeff1(NULL), sf_precoeff2(NULL),
+  sf_precoeff3(NULL), sf_precoeff4(NULL), sf_precoeff5(NULL), sf_precoeff6(NULL),
+  acons(NULL), density_A_brick(NULL), density_B_brick(NULL), density_A_fft(NULL),
+  density_B_fft(NULL), fft1(NULL), fft2(NULL), remap(NULL), cg(NULL), cg_peratom(NULL),
+  part2grid(NULL), boxlo(NULL) , ncharges(0)
+{
+  peratom_allocate_flag = 0;
+  group_allocate_flag = 0;
 
   pppmflag = 1;
   group_group_enable = 1;
@@ -212,7 +211,7 @@ void PPPMOffcentre::settings(int narg, char **arg)
   }
   // offcentre variant ends
 
-  // check 
+  // check
   if (narg > argcount) {
     fprintf(stderr, "number of specified charges exceeds the declared %i\n",
             nCoulSites);
@@ -903,6 +902,7 @@ void PPPMOffcentre::compute(int eflag, int vflag)
     double virial_all[6];
     MPI_Allreduce(virial,virial_all,6,MPI_DOUBLE,MPI_SUM,world);
     for (i = 0; i < 6; i++) virial[i] = 0.5*qscale*volume*virial_all[i];
+    // for (i = 0; i < 6; i++) printf("ALL %f %f %f %f\n", virial[i], virial_all[i], qscale, volume);
   }
 
   // per-atom energy/virial
@@ -919,13 +919,15 @@ void PPPMOffcentre::compute(int eflag, int vflag)
       for (i = 0; i < nlocal; i++) {
         int itype = type[i];
         double qi_all = 0.0;
+        double qi_all_2 = 0.0;
         for (int s = 1; s <= nsites[itype]; ++s) {
           double qi = molFrameCharge[itype][s];
+          qi_all_2 += qi*qi;
           qi_all += qi;
         }
 
         eatom[i] *= 0.5;
-        eatom[i] -= g_ewald*qi_all*qi_all/MY_PIS + MY_PI2*qi_all*qsum /
+        eatom[i] -= g_ewald*qi_all_2/MY_PIS + MY_PI2*qi_all*qsum /
           (g_ewald*g_ewald*volume);
         eatom[i] *= qscale;
       }
@@ -2180,7 +2182,7 @@ void PPPMOffcentre::particle_map()
         };
 
         MathExtra::matvec(rotMat, ms, labFrameSite);
-      }	
+      }
 
       double rsite[3] = {
         labFrameSite[0]+x[i][0],
@@ -2299,7 +2301,7 @@ void PPPMOffcentre::make_rho()
         };
 
         MathExtra::matvec(rotMat, ms, labFrameSite);
-      }	
+      }
 
       double rsite[3] = {
         labFrameSite[0]+x[i][0],
@@ -2931,7 +2933,7 @@ void PPPMOffcentre::fieldforce_ad()
 
   double **x = atom->x;
   double **f = atom->f;
-  double **tor = atom->torque;    
+  double **tor = atom->torque;
   int *type = atom->type;
   double *iquat;
   AtomVecEllipsoid::Bonus *bonus = avec->bonus;
@@ -2961,7 +2963,7 @@ void PPPMOffcentre::fieldforce_ad()
         };
 
         MathExtra::matvec(rotMat, ms, labFrameSite);
-      }	
+      }
 
       double rsite[3] = {
         labFrameSite[0]+x[i][0],
@@ -3036,7 +3038,7 @@ void PPPMOffcentre::fieldforce_ad()
     }
   }
 
-  if (triclinic != 0) domain->x2lamda(atom->nlocal);  
+  if (triclinic != 0) domain->x2lamda(atom->nlocal);
 }
 
 /* ----------------------------------------------------------------------
@@ -3084,7 +3086,7 @@ void PPPMOffcentre::fieldforce_peratom()
         };
 
         MathExtra::matvec(rotMat, ms, labFrameSite);
-      }	
+      }
 
       double rsite[3] = {
         labFrameSite[0]+x[i][0],
@@ -3587,53 +3589,53 @@ void PPPMOffcentre::slabcorr()
                                                    qsum*rsite[2]*rsite[2]) -
                                               qsum*zprd*zprd/12.0); } } }
 
-    // add on force corrections
+          // add on force corrections
 
-    double ffact = qscale * (-4.0*MY_PI/volume);
-    double **f = atom->f;
+          double ffact = qscale * (-4.0*MY_PI/volume);
+          double **f = atom->f;
 
-    for (int i = 0; i < nlocal; i++) {
-      int itype = type[i];
-      double rotMat[3][3];
-      if (nsites[itype] > 0) {
-        iquat = bonus[ellipsoid[i]].quat;
-        MathExtra::quat_to_mat(iquat, rotMat);
-      }
+          for (int i = 0; i < nlocal; i++) {
+            int itype = type[i];
+            double rotMat[3][3];
+            if (nsites[itype] > 0) {
+              iquat = bonus[ellipsoid[i]].quat;
+              MathExtra::quat_to_mat(iquat, rotMat);
+            }
 
-      for (int s = 1; s <= nsites[itype]; ++s) {
-        double labFrameSite[3] = {0.0, 0.0, 0.0};
-        if (molFrameSite[itype][s][0] != 0.0 ||
-            molFrameSite[itype][s][1] != 0.0 ||
-            molFrameSite[itype][s][2] != 0.0) {
-          double ms[3] = {
-            molFrameSite[itype][s][0],
-            molFrameSite[itype][s][1],
-            molFrameSite[itype][s][2]
-          };
+            for (int s = 1; s <= nsites[itype]; ++s) {
+              double labFrameSite[3] = {0.0, 0.0, 0.0};
+              if (molFrameSite[itype][s][0] != 0.0 ||
+                  molFrameSite[itype][s][1] != 0.0 ||
+                  molFrameSite[itype][s][2] != 0.0) {
+                double ms[3] = {
+                  molFrameSite[itype][s][0],
+                  molFrameSite[itype][s][1],
+                  molFrameSite[itype][s][2]
+                };
 
-          MathExtra::matvec(rotMat, ms, labFrameSite);
-        }
+                MathExtra::matvec(rotMat, ms, labFrameSite);
+              }
 
-        double rsite[3] = {
-          labFrameSite[0]+x[i][0],
-          labFrameSite[1]+x[i][1],
-          labFrameSite[2]+x[i][2]
-        };
+              double rsite[3] = {
+                labFrameSite[0]+x[i][0],
+                labFrameSite[1]+x[i][1],
+                labFrameSite[2]+x[i][2]
+              };
 
-        double force[3] = {0.0, 0.0, 0.0};
-        force[2] = ffact * molFrameCharge[itype][s]*(dipole_all -
-                                                     qsum*rsite[2]);
-        f[i][2] += force[2];
+              double force[3] = {0.0, 0.0, 0.0};
+              force[2] = ffact * molFrameCharge[itype][s]*(dipole_all -
+                                                           qsum*rsite[2]);
+              f[i][2] += force[2];
 
-        // and torque?
+              // and torque?
 
-        double torque[3];
-        MathExtra::cross3(labFrameSite, force, torque);
-        tor[i][0] += torque[0];
-        tor[i][1] += torque[1];
-        tor[i][2] += torque[2];
-      }
-    }
+              double torque[3];
+              MathExtra::cross3(labFrameSite, force, torque);
+              tor[i][0] += torque[0];
+              tor[i][1] += torque[1];
+              tor[i][2] += torque[2];
+            }
+          }
   }
 }
 
@@ -3754,7 +3756,7 @@ void PPPMOffcentre::compute_group_group(int groupbit_A,
 
   // convert atoms from box to lamda coords
 
-  //MATTEO probably should do something here, convert also offcntre positions 
+  //MATTEO probably should do something here, convert also offcntre positions
 
   if (triclinic == 0) boxlo = domain->boxlo;
   else {
@@ -3830,7 +3832,7 @@ void PPPMOffcentre::compute_group_group(int groupbit_A,
 
   // convert atoms back from lamda to box coords
 
-  //MATTEO probably should do something here, convert also offcntre positions 
+  //MATTEO probably should do something here, convert also offcntre positions
 
   if (triclinic != 0) domain->lamda2x(atom->nlocal);
 
@@ -3930,7 +3932,7 @@ void PPPMOffcentre::make_rho_groups(int groupbit_A,
           };
 
           MathExtra::matvec(rotMat, ms, labFrameSite);
-        }	
+        }
 
         double rsite[3] = {
           labFrameSite[0]+x[i][0],
@@ -4185,7 +4187,7 @@ void PPPMOffcentre::slabcorr_groups(int groupbit_A,
           };
 
           MathExtra::matvec(rotMat, ms, labFrameSite);
-        }	
+        }
 
         double rsite[3] = {
           labFrameSite[0]+x[i][0],
