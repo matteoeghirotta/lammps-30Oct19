@@ -83,7 +83,7 @@ void PairCoulLongOffcentre::compute_pair(int i, int j, int eflag, int vflag, int
 
   bool sameAtom = i == j;
 
-  // tagint *tag = atom->tag;
+  tagint *tag = atom->tag;
   int *type = atom->type;
   int *numneigh = list->numneigh;
   int **firstneigh = list->firstneigh;
@@ -249,12 +249,11 @@ void PairCoulLongOffcentre::compute_pair(int i, int j, int eflag, int vflag, int
         }
 
         if (evflag) {
-          // printf("EVFLAG %f %i %i\n", fpair, (tag[i]-1)*nsites[itype]+s1, (tag[j]-1)*nsites[jtype]+s2);
+          // charges inside same bead should not contribute to virial
+          if (sameAtom) fpair = 0.0;
 
           ev_tally(i,j,nlocal,newton_pair,
                    0.0,ecoul,fpair,r12[0],r12[1],r12[2]);
-          // double *virial = force->pair->virial;
-          // printf("virial %f %f %f %f %f\n", virial[0], virial[1], virial[2], virial[3], virial[4], virial[5]);
         }
       }
     }
