@@ -562,32 +562,105 @@ double PairCoulLongOffcentreSoft::single(int i, int j, int itype, int jtype,
                                          double factor_coul, double /*factor_lj*/,
                                          double &fforce)
 {
+  double *iquat,*jquat;
+  AtomVecEllipsoid::Bonus *bonus = avec->bonus;
+  int *ellipsoid = atom->ellipsoid;
+  double **x = atom->x;
+  double r12[3];
+
   double r,grij,expm2,t,erfc,prefactor;
-  double forcecoul,phicoul;
+  double forcecoul,phicoul = 0.0;
   double denc;
 
-  if (rsq < cut_coulsq) {
-    r = sqrt(rsq);
-    grij = g_ewald * r;
-    expm2 = exp(-grij*grij);
-    t = 1.0 / (1.0 + EWALD_P*grij);
-    erfc = t * (A1+t*(A2+t*(A3+t*(A4+t*A5)))) * expm2;
+  // rotate site1 in lab frame
+  double rotMat1[3][3];
+  if (nsites[itype] > 0) {
+    iquat = bonus[ellipsoid[i]].quat;
+    MathExtra::quat_to_mat(iquat, rotMat1);
+  }
 
-    denc = sqrt(lam2[itype][jtype] + rsq);
-    prefactor = force->qqrd2e * lam1[itype][jtype] * atom->q[i]*atom->q[j] /
-      (denc*denc*denc);
+  // rotate site2 in lab frame
+  double rotMat2[3][3];
+  if (nsites[jtype] > 0) {
+    jquat = bonus[ellipsoid[j]].quat;
+    MathExtra::quat_to_mat(jquat, rotMat2);
+  }
 
-    forcecoul = prefactor * (erfc + EWALD_F*grij*expm2);
-    if (factor_coul < 1.0) forcecoul -= (1.0-factor_coul)*prefactor;
-  } else forcecoul = 0.0;
+  for (int s1 = 1; s1 <= nsites[itype]; ++s1) {
+    double q1 = molFrameCharge[itype][s1];
+    double labFrameSite1[3] = {0.0, 0.0, 0.0};
+    if (molFrameSite[itype][s1][0] != 0.0 ||
+        molFrameSite[itype][s1][1] != 0.0 ||
+        molFrameSite[itype][s1][2] != 0.0)
+    {
+      double ms1[3] = {
+        molFrameSite[itype][s1][0],
+        molFrameSite[itype][s1][1],
+        molFrameSite[itype][s1][2]
+      };
 
-  fforce = forcecoul;
+      MathExtra::matvec(rotMat1, ms1, labFrameSite1);
+    }
 
-  if (rsq < cut_coulsq) {
-    prefactor = force->qqrd2e * lam1[itype][jtype] * atom->q[i]*atom->q[j] / denc;
-    phicoul = prefactor*erfc;
-    if (factor_coul < 1.0) phicoul -= (1.0-factor_coul)*prefactor;
-  } else phicoul = 0.0;
+    double rsite1[3] = {
+      labFrameSite1[0]+x[i][0],
+      labFrameSite1[1]+x[i][1],
+      labFrameSite1[2]+x[i][2]
+    };
+
+    for (int s2 = 1; s2 <= nsites[jtype]; ++s2) {
+      double q2 = molFrameCharge[jtype][s2];
+      double labFrameSite2[3] = {0.0, 0.0, 0.0};
+      if (molFrameSite[jtype][s2][0] != 0.0 ||
+          molFrameSite[jtype][s2][1] != 0.0 ||
+          molFrameSite[jtype][s2][2] != 0.0)
+      {
+        double ms2[3] = {
+          molFrameSite[jtype][s2][0],
+          molFrameSite[jtype][s2][1],
+          molFrameSite[jtype][s2][2]
+        };
+
+        MathExtra::matvec(rotMat2, ms2, labFrameSite2);
+      }
+
+      double rsite2[3] = {
+        labFrameSite2[0]+x[j][0],
+        labFrameSite2[1]+x[j][1],
+        labFrameSite2[2]+x[j][2]
+      };
+
+      // r12 = site center to site center vector
+      r12[0] = rsite1[0]-rsite2[0];
+      r12[1] = rsite1[1]-rsite2[1];
+      r12[2] = rsite1[2]-rsite2[2];
+
+      double rsq = MathExtra::dot3(r12, r12);
+
+      if (rsq < cut_coulsq) {
+        r = sqrt(rsq);
+        grij = g_ewald * r;
+        expm2 = exp(-grij*grij);
+        t = 1.0 / (1.0 + EWALD_P*grij);
+        erfc = t * (A1+t*(A2+t*(A3+t*(A4+t*A5)))) * expm2;
+
+        denc = sqrt(lam2[itype][jtype] + rsq);
+        prefactor = force->qqrd2e * lam1[itype][jtype] * q1*q2 /
+          (denc*denc*denc);
+
+        forcecoul = prefactor * (erfc + EWALD_F*grij*expm2);
+        if (factor_coul < 1.0) forcecoul -= (1.0-factor_coul)*prefactor;
+      } else forcecoul = 0.0;
+
+      fforce += forcecoul;
+
+      if (rsq < cut_coulsq) {
+        prefactor = force->qqrd2e * lam1[itype][jtype] * q1*q2 / denc;
+        phicoul += prefactor*erfc;
+        if (factor_coul < 1.0) phicoul -= (1.0-factor_coul)*prefactor;
+      }
+    }
+  }
 
   return phicoul;
 }
