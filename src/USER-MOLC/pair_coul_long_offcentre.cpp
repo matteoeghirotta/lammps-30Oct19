@@ -178,7 +178,7 @@ void PairCoulLongOffcentre::compute_pair(int i, int j, int eflag, int vflag, int
       //domain->minimum_image(r12[0], r12[1], r12[2]);
       double rsq = MathExtra::dot3(r12, r12);
 
-      if ((rsq < cut_coulsq) && ((!sameAtom) || (sameAtom && (s1 < s2)))) {
+      if ((rsq < cut_coulsq) && ((!sameAtom) || (s1 < s2))) {
         double r2inv = 1.0/rsq;
         double q2 = molFrameCharge[jtype][s2];
 
