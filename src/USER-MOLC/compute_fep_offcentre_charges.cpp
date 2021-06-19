@@ -54,6 +54,7 @@ ComputeFEPOffcentreCharges::ComputeFEPOffcentreCharges(LAMMPS *lmp, int narg, ch
   vector_flag = 1;
   size_vector = 3;
   extvector = 0;
+  nmax_offcentre_charges = 0;
 
   vector = new double[size_vector];
 
@@ -166,6 +167,7 @@ ComputeFEPOffcentreCharges::ComputeFEPOffcentreCharges(LAMMPS *lmp, int narg, ch
 
   f_orig = NULL;
   q_orig = NULL;
+  qoff_orig = NULL;
   peatom_orig = keatom_orig = NULL;
   pvatom_orig = kvatom_orig = NULL;
 
@@ -250,6 +252,12 @@ void ComputeFEPOffcentreCharges::init()
       } else if (pert->aparam == CHARGE_OFFCENTRE) {
         if (!atom->style_match("ellipsoid"))
           error->all(FLERR,"compute fep requires ellipsoid style");
+
+        for (int i = 1; i <= atom->ntypes; i++) {
+          int nsites = ((PPPMOffcentre*)force->kspace)->getNsitesOf(i);
+          nmax_offcentre_charges = nsites > nmax_offcentre_charges
+            ? nsites : nmax_offcentre_charges;
+        }
       }
     }
   }
@@ -417,19 +425,13 @@ void ComputeFEPOffcentreCharges::perturb_params()
               q[i] += delta;
 
       } else if (pert->aparam == CHARGE_OFFCENTRE) {      // modify charges
-        int *atype = atom->type;
-        int *mask = atom->mask;
-        int natom = atom->nlocal + atom->nghost;
-        AtomVecEllipsoid::Bonus *bonus = avec->bonus;
-
-        for (i = 0; i < natom; i++)
-          if (atype[i] >= pert->ilo && atype[i] <= pert->ihi)
-            if (mask[i] & groupbit) {
-              int nsites = ((PPPMOffcentre*)force->kspace)->getNsitesOf(atype[i]);
-              double* qoff = ((PPPMOffcentre*)force->kspace)->getCharges(atype[i]);
-              for (int s = 1; s <= nsites; ++s)
-                qoff[s] += delta;
-            }
+        for (i = 1; i <= atom->ntypes; i++)
+          if (i >= pert->ilo && i <= pert->ihi) {
+            int nsites = ((PPPMOffcentre*)force->kspace)->getNsitesOf(i);
+            double* qoff = ((PPPMOffcentre*)force->kspace)->getCharges(i);
+            for (int s = 1; s <= nsites; ++s)
+              qoff[s-1 + nmax_offcentre_charges*i] += delta;
+          }
       }
     }
   }
@@ -508,7 +510,7 @@ void ComputeFEPOffcentreCharges::allocate_storage()
     }
   }
   if (chgoffflag) {
-    memory->create(qoff_orig,nmax_offcentre_charges,"fep:qoff_orig");
+    memory->create(qoff_orig,nmax_offcentre_charges*atom->ntypes,"fep:qoff_orig");
     if (force->kspace) {
       memory->create(keatom_orig,nmax,"fep:keatom_orig");
       memory->create(kvatom_orig,nmax,6,"fep:kvatom_orig");
@@ -525,11 +527,13 @@ void ComputeFEPOffcentreCharges::deallocate_storage()
   memory->destroy(peatom_orig);
   memory->destroy(pvatom_orig);
   memory->destroy(q_orig);
+  memory->destroy(qoff_orig);
   memory->destroy(keatom_orig);
   memory->destroy(kvatom_orig);
 
   f_orig = NULL;
   q_orig = NULL;
+  qoff_orig = NULL;
   peatom_orig = keatom_orig = NULL;
   pvatom_orig = kvatom_orig = NULL;
 }
@@ -616,12 +620,11 @@ void ComputeFEPOffcentreCharges::backup_qfev()
   }
 
   if (chgoffflag) {
-    int *atype = atom->type;
-    for (i = 0; i < nall; i++) {
-      int nsites = ((PPPMOffcentre*)force->kspace)->getNsitesOf(atype[i]);
-      double* qoff = ((PPPMOffcentre*)force->kspace)->getCharges(atype[i]);
+    for (i = 1; i <= atom->ntypes; i++) {
+      int nsites = ((PPPMOffcentre*)force->kspace)->getNsitesOf(i);
+      double* qoff = ((PPPMOffcentre*)force->kspace)->getCharges(i);
       for (int s = 1; s <= nsites; ++s)
-        qoff_orig[s] = qoff[s];
+        qoff_orig[s-1 + nmax_offcentre_charges*i] = qoff[s-1 + nmax_offcentre_charges*i];
     }
 
     if (force->kspace) {
@@ -732,12 +735,11 @@ void ComputeFEPOffcentreCharges::restore_qfev()
   }
 
   if (chgoffflag) {
-    int *atype = atom->type;
-    for (i = 0; i < nall; i++) {
-      int nsites = ((PPPMOffcentre*)force->kspace)->getNsitesOf(atype[i]);
-      double* qoff = ((PPPMOffcentre*)force->kspace)->getCharges(atype[i]);
+    for (i = 1; i <= atom->ntypes; i++) {
+      int nsites = ((PPPMOffcentre*)force->kspace)->getNsitesOf(i);
+      double* qoff = ((PPPMOffcentre*)force->kspace)->getCharges(i);
       for (int s = 1; s <= nsites; ++s)
-        qoff_orig[s] = qoff[s];
+        qoff[s-1 + nmax_offcentre_charges*i] = qoff_orig[s-1 + nmax_offcentre_charges*i];
     }
 
     if (force->kspace) {

@@ -55,9 +55,9 @@ FixAdaptFEPOffcentreCharges::FixAdaptFEPOffcentreCharges(LAMMPS *lmp, int narg, 
   dynamic_group_allow = 1;
   create_attribute = 1;
 
-  // avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
-  // if (!avec)
-  //   error->all(FLERR,"Fix adapt fep offcentre requires atom style ellipsoid");
+  avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
+  if (!avec)
+    error->all(FLERR,"Fix adapt fep offcentre requires atom style ellipsoid");
 
   // count # of adaptations
 
