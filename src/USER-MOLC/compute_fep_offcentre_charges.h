@@ -17,7 +17,7 @@ See the README file in the top-level LAMMPS directory.
 
 #ifdef COMPUTE_CLASS
 
-ComputeStyle(fep,ComputeFEPOffcentreCharges)
+ComputeStyle(fep/offcentre,ComputeFEPOffcentreCharges)
 
 #else
 
