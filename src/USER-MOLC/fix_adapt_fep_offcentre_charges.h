@@ -17,8 +17,8 @@ FixStyle(adapt/fep/offcentre,FixAdaptFEPOffcentreCharges)
 
 #else
 
-#ifndef LMP_FIX_ADAPT_FEP_H
-#define LMP_FIX_ADAPT_FEP_H
+#ifndef LMP_FIX_ADAPT_FEP_OFFCENTRE_CHARGES_H
+#define LMP_FIX_ADAPT_FEP_OFFCENTRE_CHARGES_H
 
 #include "fix.h"
 
