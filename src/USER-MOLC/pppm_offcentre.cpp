@@ -4252,3 +4252,7 @@ int PPPMOffcentre::getNsitesOf(int type) {
 double* PPPMOffcentre::getCharges(int type) {
   return molFrameCharge[type];
 }
+
+void PPPMOffcentre::setCharges(int type, int chN, double chValue) {
+  molFrameCharge[type][chN] = chValue;
+}

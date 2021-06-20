@@ -1,14 +1,14 @@
 /* -*- c++ -*- ----------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+http://lammps.sandia.gov, Sandia National Laboratories
+Steve Plimpton, sjplimp@sandia.gov
 
-   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under
-   the GNU General Public License.
+Copyright (2003) Sandia Corporation.  Under the terms of Contract
+DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+certain rights in this software.  This software is distributed under
+the GNU General Public License.
 
-   See the README file in the top-level LAMMPS directory.
+See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
 #ifdef KSPACE_CLASS
@@ -24,194 +24,196 @@ KSpaceStyle(pppm/offcentre,PPPMOffcentre)
 #include <mpi.h>
 
 #ifdef FFT_SINGLE
-typedef float FFT_SCALAR;
+  typedef float FFT_SCALAR;
 #define MPI_FFT_SCALAR MPI_FLOAT
 #else
-typedef double FFT_SCALAR;
+  typedef double FFT_SCALAR;
 #define MPI_FFT_SCALAR MPI_DOUBLE
 #endif
 
 #include "kspace.h"
 
-namespace LAMMPS_NS {
+  namespace LAMMPS_NS {
 
-class PPPMOffcentre : public KSpace {
- public:
-  PPPMOffcentre(class LAMMPS *);
-  virtual ~PPPMOffcentre();
-  virtual void init();
-  virtual void settings(int, char **);
-  virtual void setup();
-  void setup_grid();
-  virtual void compute(int, int);
-  virtual int timing_1d(int, double &);
-  virtual int timing_3d(int, double &);
-  virtual double memory_usage();
+    class PPPMOffcentre : public KSpace {
+    public:
+      PPPMOffcentre(class LAMMPS *);
+      virtual ~PPPMOffcentre();
+      virtual void init();
+      virtual void settings(int, char **);
+      virtual void setup();
+      void setup_grid();
+      virtual void compute(int, int);
+      virtual int timing_1d(int, double &);
+      virtual int timing_3d(int, double &);
+      virtual double memory_usage();
 
-  virtual void compute_group_group(int, int, int);
+      virtual void compute_group_group(int, int, int);
 
-  void qsum_qsq();
-  
-  int getNsitesOf(int);
-  double* getCharges(int);
- protected:
-  int me,nprocs;
-  int nfactors;
-  int *factors;
-  double cutoff;
-  double volume;
-  double delxinv,delyinv,delzinv,delvolinv;
-  double h_x,h_y,h_z;
-  double shift,shiftone;
-  int peratom_allocate_flag;
+      void qsum_qsq();
 
-  bigint ncharges; // total charges
-  double max_charge_offset; // max offcentre charge offset
-  
-  // support offcentre charges
-  class AtomVecEllipsoid *avec;
-  int max_nsites;              // maximum number of sites per atom
-  int* nsites;
-  double ***molFrameSite;  // positions of sites
-  double **molFrameCharge;  // positions of sites
+      int getNsitesOf(int);
+      double* getCharges(int);
+      void setCharges(int, int, double);
 
-  int nxlo_in,nylo_in,nzlo_in,nxhi_in,nyhi_in,nzhi_in;
-  int nxlo_out,nylo_out,nzlo_out,nxhi_out,nyhi_out,nzhi_out;
-  int nxlo_ghost,nxhi_ghost,nylo_ghost,nyhi_ghost,nzlo_ghost,nzhi_ghost;
-  int nxlo_fft,nylo_fft,nzlo_fft,nxhi_fft,nyhi_fft,nzhi_fft;
-  int nlower,nupper;
-  int ngrid,nfft,nfft_both;
+    protected:
+      int me,nprocs;
+      int nfactors;
+      int *factors;
+      double cutoff;
+      double volume;
+      double delxinv,delyinv,delzinv,delvolinv;
+      double h_x,h_y,h_z;
+      double shift,shiftone;
+      int peratom_allocate_flag;
 
-  FFT_SCALAR ***density_brick;
-  FFT_SCALAR ***vdx_brick,***vdy_brick,***vdz_brick;
-  FFT_SCALAR ***u_brick;
-  FFT_SCALAR ***v0_brick,***v1_brick,***v2_brick;
-  FFT_SCALAR ***v3_brick,***v4_brick,***v5_brick;
-  double *greensfn;
-  double **vg;
-  double *fkx,*fky,*fkz;
-  FFT_SCALAR *density_fft;
-  FFT_SCALAR *work1,*work2;
+      bigint ncharges; // total charges
+      double max_charge_offset; // max offcentre charge offset
 
-  double *gf_b;
-  FFT_SCALAR **rho1d,**rho_coeff,**drho1d,**drho_coeff;
-  double *sf_precoeff1, *sf_precoeff2, *sf_precoeff3;
-  double *sf_precoeff4, *sf_precoeff5, *sf_precoeff6;
-  double sf_coeff[6];          // coefficients for calculating ad self-forces
-  double **acons;
+      // support offcentre charges
+      class AtomVecEllipsoid *avec;
+      int max_nsites;              // maximum number of sites per atom
+      int* nsites;
+      double ***molFrameSite;  // positions of sites
+      double **molFrameCharge;  // positions of sites
 
-  // group-group interactions
+      int nxlo_in,nylo_in,nzlo_in,nxhi_in,nyhi_in,nzhi_in;
+      int nxlo_out,nylo_out,nzlo_out,nxhi_out,nyhi_out,nzhi_out;
+      int nxlo_ghost,nxhi_ghost,nylo_ghost,nyhi_ghost,nzlo_ghost,nzhi_ghost;
+      int nxlo_fft,nylo_fft,nzlo_fft,nxhi_fft,nyhi_fft,nzhi_fft;
+      int nlower,nupper;
+      int ngrid,nfft,nfft_both;
 
-  int group_allocate_flag;
-  FFT_SCALAR ***density_A_brick,***density_B_brick;
-  FFT_SCALAR *density_A_fft,*density_B_fft;
+      FFT_SCALAR ***density_brick;
+      FFT_SCALAR ***vdx_brick,***vdy_brick,***vdz_brick;
+      FFT_SCALAR ***u_brick;
+      FFT_SCALAR ***v0_brick,***v1_brick,***v2_brick;
+      FFT_SCALAR ***v3_brick,***v4_brick,***v5_brick;
+      double *greensfn;
+      double **vg;
+      double *fkx,*fky,*fkz;
+      FFT_SCALAR *density_fft;
+      FFT_SCALAR *work1,*work2;
 
-  class FFT3d *fft1,*fft2;
-  class Remap *remap;
-  class GridComm *cg;
-  class GridComm *cg_peratom;
+      double *gf_b;
+      FFT_SCALAR **rho1d,**rho_coeff,**drho1d,**drho_coeff;
+      double *sf_precoeff1, *sf_precoeff2, *sf_precoeff3;
+      double *sf_precoeff4, *sf_precoeff5, *sf_precoeff6;
+      double sf_coeff[6];          // coefficients for calculating ad self-forces
+      double **acons;
 
-  int ***part2grid;            // storage for particle-site -> grid mapping
-  int nmax;
+      // group-group interactions
 
-  double *boxlo;
-                               // TIP4P settings
-  int typeH,typeO;             // atom types of TIP4P water H and O atoms
-  double qdist;                // distance from O site to negative charge
-  double alpha;                // geometric factor
+      int group_allocate_flag;
+      FFT_SCALAR ***density_A_brick,***density_B_brick;
+      FFT_SCALAR *density_A_fft,*density_B_fft;
 
-  void set_grid_global();
-  void set_grid_local();
-  void adjust_gewald();
-  double newton_raphson_f();
-  double derivf();
-  double final_accuracy();
+      class FFT3d *fft1,*fft2;
+      class Remap *remap;
+      class GridComm *cg;
+      class GridComm *cg_peratom;
 
-  virtual void allocate();
-  virtual void allocate_peratom();
-  virtual void deallocate();
-  virtual void deallocate_peratom();
-  int factorable(int);
-  double compute_df_kspace();
-  double estimate_ik_error(double, double, bigint);
-  virtual double compute_qopt();
-  virtual void compute_gf_denom();
-  virtual void compute_gf_ik();
-  virtual void compute_gf_ad();
-  void compute_sf_precoeff();
+      int ***part2grid;            // storage for particle-site -> grid mapping
+      int nmax;
 
-  virtual void particle_map();
-  virtual void make_rho();
-  virtual void brick2fft();
+      double *boxlo;
+      // TIP4P settings
+      int typeH,typeO;             // atom types of TIP4P water H and O atoms
+      double qdist;                // distance from O site to negative charge
+      double alpha;                // geometric factor
 
-  virtual void poisson();
-  virtual void poisson_ik();
-  virtual void poisson_ad();
+      void set_grid_global();
+      void set_grid_local();
+      void adjust_gewald();
+      double newton_raphson_f();
+      double derivf();
+      double final_accuracy();
 
-  virtual void fieldforce();
-  virtual void fieldforce_ik();
-  virtual void fieldforce_ad();
+      virtual void allocate();
+      virtual void allocate_peratom();
+      virtual void deallocate();
+      virtual void deallocate_peratom();
+      int factorable(int);
+      double compute_df_kspace();
+      double estimate_ik_error(double, double, bigint);
+      virtual double compute_qopt();
+      virtual void compute_gf_denom();
+      virtual void compute_gf_ik();
+      virtual void compute_gf_ad();
+      void compute_sf_precoeff();
 
-  virtual void poisson_peratom();
-  virtual void fieldforce_peratom();
-  void procs2grid2d(int,int,int,int *, int*);
-  void compute_rho1d(const FFT_SCALAR &, const FFT_SCALAR &,
-                     const FFT_SCALAR &);
-  void compute_drho1d(const FFT_SCALAR &, const FFT_SCALAR &,
-                     const FFT_SCALAR &);
-  void compute_rho_coeff();
-  void slabcorr();
+      virtual void particle_map();
+      virtual void make_rho();
+      virtual void brick2fft();
 
-  // grid communication
+      virtual void poisson();
+      virtual void poisson_ik();
+      virtual void poisson_ad();
 
-  virtual void pack_forward(int, FFT_SCALAR *, int, int *);
-  virtual void unpack_forward(int, FFT_SCALAR *, int, int *);
-  virtual void pack_reverse(int, FFT_SCALAR *, int, int *);
-  virtual void unpack_reverse(int, FFT_SCALAR *, int, int *);
+      virtual void fieldforce();
+      virtual void fieldforce_ik();
+      virtual void fieldforce_ad();
 
-  // triclinic
+      virtual void poisson_peratom();
+      virtual void fieldforce_peratom();
+      void procs2grid2d(int,int,int,int *, int*);
+      void compute_rho1d(const FFT_SCALAR &, const FFT_SCALAR &,
+                         const FFT_SCALAR &);
+      void compute_drho1d(const FFT_SCALAR &, const FFT_SCALAR &,
+                          const FFT_SCALAR &);
+      void compute_rho_coeff();
+      void slabcorr();
 
-  int triclinic;               // domain settings, orthog or triclinic
-  void setup_triclinic();
-  void compute_gf_ik_triclinic();
-  void poisson_ik_triclinic();
-  void poisson_groups_triclinic();
+      // grid communication
 
-  // group-group interactions
+      virtual void pack_forward(int, FFT_SCALAR *, int, int *);
+      virtual void unpack_forward(int, FFT_SCALAR *, int, int *);
+      virtual void pack_reverse(int, FFT_SCALAR *, int, int *);
+      virtual void unpack_reverse(int, FFT_SCALAR *, int, int *);
 
-  virtual void allocate_groups();
-  virtual void deallocate_groups();
-  virtual void make_rho_groups(int, int, int);
-  virtual void poisson_groups(int);
-  virtual void slabcorr_groups(int,int,int);
+      // triclinic
 
-/* ----------------------------------------------------------------------
-   denominator for Hockney-Eastwood Green's function
-     of x,y,z = sin(kx*deltax/2), etc
+      int triclinic;               // domain settings, orthog or triclinic
+      void setup_triclinic();
+      void compute_gf_ik_triclinic();
+      void poisson_ik_triclinic();
+      void poisson_groups_triclinic();
 
-            inf                 n-1
-   S(n,k) = Sum  W(k+pi*j)**2 = Sum b(l)*(z*z)**l
-           j=-inf               l=0
+      // group-group interactions
 
-          = -(z*z)**n /(2n-1)! * (d/dx)**(2n-1) cot(x)  at z = sin(x)
-   gf_b = denominator expansion coeffs
-------------------------------------------------------------------------- */
+      virtual void allocate_groups();
+      virtual void deallocate_groups();
+      virtual void make_rho_groups(int, int, int);
+      virtual void poisson_groups(int);
+      virtual void slabcorr_groups(int,int,int);
 
-  inline double gf_denom(const double &x, const double &y,
-                         const double &z) const {
-    double sx,sy,sz;
-    sz = sy = sx = 0.0;
-    for (int l = order-1; l >= 0; l--) {
-      sx = gf_b[l] + sx*x;
-      sy = gf_b[l] + sy*y;
-      sz = gf_b[l] + sz*z;
-    }
-    double s = sx*sy*sz;
-    return s*s;
-  };
-};
+      /* ----------------------------------------------------------------------
+         denominator for Hockney-Eastwood Green's function
+         of x,y,z = sin(kx*deltax/2), etc
 
-}
+         inf                 n-1
+         S(n,k) = Sum  W(k+pi*j)**2 = Sum b(l)*(z*z)**l
+         j=-inf               l=0
+
+         = -(z*z)**n /(2n-1)! * (d/dx)**(2n-1) cot(x)  at z = sin(x)
+         gf_b = denominator expansion coeffs
+         ------------------------------------------------------------------------- */
+
+      inline double gf_denom(const double &x, const double &y,
+                             const double &z) const {
+        double sx,sy,sz;
+        sz = sy = sx = 0.0;
+        for (int l = order-1; l >= 0; l--) {
+          sx = gf_b[l] + sx*x;
+          sy = gf_b[l] + sy*y;
+          sz = gf_b[l] + sz*z;
+        }
+        double s = sx*sy*sz;
+        return s*s;
+      };
+    };
+
+  }
 
 #endif
 #endif

@@ -573,7 +573,8 @@ void FixAdaptFEPOffcentreCharges::change_settings()
               int nsites = ((PPPMOffcentre*)force->kspace)->getNsitesOf(atype[i]);
               double* qoff = ((PPPMOffcentre*)force->kspace)->getCharges(atype[i]);
               for (int s = 1; s <= nsites; ++s) {
-                qoff[i+s-1] = value;
+                ((PPPMOffcentre*)force->kspace)->setCharges(i, s, value);
+                // qoff[i+s-1] = value;
               }
             }
       }
@@ -648,9 +649,10 @@ void FixAdaptFEPOffcentreCharges::restore_settings()
         for (int i = 0; i < nlocal; i++) {
           if (mask[i] & groupbit) {
             int nsites = ((PPPMOffcentre*)force->kspace)->getNsitesOf(atype[i]);
-            double* qoff = ((PPPMOffcentre*)force->kspace)->getCharges(atype[i]);
+            // double* qoff = ((PPPMOffcentre*)force->kspace)->getCharges(atype[i]);
             for (int s = 1; s <= nsites; ++s)
-              qoff[s] = vec[i+s-1];
+              ((PPPMOffcentre*)force->kspace)->setCharges(i, s, vec[i+s-1]);
+            // qoff[s] = vec[i+s-1];
           }
         }
       }

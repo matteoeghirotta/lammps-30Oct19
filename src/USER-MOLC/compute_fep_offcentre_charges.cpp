@@ -430,7 +430,8 @@ void ComputeFEPOffcentreCharges::perturb_params()
             int nsites = ((PPPMOffcentre*)force->kspace)->getNsitesOf(i);
             double* qoff = ((PPPMOffcentre*)force->kspace)->getCharges(i);
             for (int s = 1; s <= nsites; ++s)
-              qoff[s-1 + nmax_offcentre_charges*i] += delta;
+              ((PPPMOffcentre*)force->kspace)->setCharges(i, s, qoff[s] + delta);
+            // qoff[s-1 + nmax_offcentre_charges*i] += delta;
           }
       }
     }
@@ -737,9 +738,10 @@ void ComputeFEPOffcentreCharges::restore_qfev()
   if (chgoffflag) {
     for (i = 1; i <= atom->ntypes; i++) {
       int nsites = ((PPPMOffcentre*)force->kspace)->getNsitesOf(i);
-      double* qoff = ((PPPMOffcentre*)force->kspace)->getCharges(i);
+      // double* qoff = ((PPPMOffcentre*)force->kspace)->getCharges(i);
       for (int s = 1; s <= nsites; ++s)
-        qoff[s-1 + nmax_offcentre_charges*i] = qoff_orig[s-1 + nmax_offcentre_charges*i];
+        ((PPPMOffcentre*)force->kspace)->setCharges(i, s, qoff_orig[s-1 + nmax_offcentre_charges*i]);
+      // qoff[s-1 + nmax_offcentre_charges*i] = qoff_orig[s-1 + nmax_offcentre_charges*i];
     }
 
     if (force->kspace) {
