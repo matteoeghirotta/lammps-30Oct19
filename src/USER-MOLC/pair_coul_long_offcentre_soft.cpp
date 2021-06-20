@@ -324,7 +324,7 @@ void PairCoulLongOffcentreSoft::allocate()
 
 void PairCoulLongOffcentreSoft::settings(int narg, char **arg)
 {
-  if (narg != 3) error->all(FLERR,"Illegal pair_style command");
+  if (narg < 3) error->all(FLERR,"Illegal pair_style command");
 
   nlambda = force->numeric(FLERR,arg[0]);
   alphac  = force->numeric(FLERR,arg[1]);
@@ -441,8 +441,8 @@ void PairCoulLongOffcentreSoft::coeff(int narg, char **arg)
 
 void PairCoulLongOffcentreSoft::init_style()
 {
-  if (!atom->q_flag)
-    error->all(FLERR,"Pair style lj/cut/coul/long requires atom attribute q");
+  // if (!atom->q_flag)
+  //   error->all(FLERR,"Pair style lj/cut/coul/long requires atom attribute q");
 
   neighbor->request(this,instance_me);
 

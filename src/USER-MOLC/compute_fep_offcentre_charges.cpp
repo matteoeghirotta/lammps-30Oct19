@@ -224,6 +224,8 @@ void ComputeFEPOffcentreCharges::init()
     if (pert->which == PAIR) {
       pairflag = 1;
 
+      printf("DEBUG %s\n", pert->pstyle);
+
       Pair *pair = force->pair_match(pert->pstyle,1);
       if (pair == NULL) error->all(FLERR,"compute fep pair style "
                                    "does not exist");
