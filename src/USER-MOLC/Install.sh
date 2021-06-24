@@ -78,3 +78,9 @@ action compute_pair_local_numeric.cpp
 action compute_group_group.cpp
 action compute_erotate_asphere_atom.h
 action compute_erotate_asphere_atom.cpp
+action pair_coul_long_offcentre_soft.h
+action pair_coul_long_offcentre_soft.cpp
+action fix_adapt_fep_offcentre_charges.cpp
+action fix_adapt_fep_offcentre_charges.h
+action compute_fep_offcentre_charges.h
+action compute_fep_offcentre_charges.cpp
