@@ -1,14 +1,14 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+http://lammps.sandia.gov, Sandia National Laboratories
+Steve Plimpton, sjplimp@sandia.gov
 
-   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under
-   the GNU General Public License.
+Copyright (2003) Sandia Corporation.  Under the terms of Contract
+DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+certain rights in this software.  This software is distributed under
+the GNU General Public License.
 
-   See the README file in the top-level LAMMPS directory.
+See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
 #include "update.h"
@@ -47,6 +47,7 @@ Update::Update(LAMMPS *lmp) : Pointers(lmp)
   multireplica = 0;
 
   eflag_global = vflag_global = -1;
+  eflag_atom = vflag_atom = 0;
 
   unit_style = NULL;
   set_units("lj");
@@ -325,7 +326,7 @@ void Update::create_integrate(int narg, char **arg, int trysuffix)
 
 /* ----------------------------------------------------------------------
    create the Integrate style, first with suffix appended
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void Update::new_integrate(char *style, int narg, char **arg,
                            int trysuffix, int &sflag)
@@ -366,7 +367,7 @@ void Update::new_integrate(char *style, int narg, char **arg,
 
 /* ----------------------------------------------------------------------
    one instance per integrate style in style_integrate.h
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 template <typename T>
 Integrate *Update::integrate_creator(LAMMPS *lmp, int narg, char ** arg)
@@ -402,10 +403,10 @@ void Update::create_minimize(int narg, char **arg, int trysuffix)
 
 /* ----------------------------------------------------------------------
    create the Minimize style, first with suffix appended
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void Update::new_minimize(char *style, int /* narg */, char ** /* arg */,
-                           int trysuffix, int &sflag)
+                          int trysuffix, int &sflag)
 {
   if (trysuffix && lmp->suffix_enable) {
     if (lmp->suffix) {
@@ -443,7 +444,7 @@ void Update::new_minimize(char *style, int /* narg */, char ** /* arg */,
 
 /* ----------------------------------------------------------------------
    one instance per minimize style in style_minimize.h
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 template <typename T>
 Min *Update::minimize_creator(LAMMPS *lmp)
@@ -453,7 +454,7 @@ Min *Update::minimize_creator(LAMMPS *lmp)
 
 /* ----------------------------------------------------------------------
    reset timestep as called from input script
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void Update::reset_timestep(int narg, char **arg)
 {
@@ -465,7 +466,7 @@ void Update::reset_timestep(int narg, char **arg)
 /* ----------------------------------------------------------------------
    reset timestep
    called from rerun command and input script (indirectly)
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void Update::reset_timestep(bigint newstep)
 {
@@ -522,7 +523,7 @@ void Update::reset_timestep(bigint newstep)
 /* ----------------------------------------------------------------------
    update elapsed simulation time
    called at end of runs or when timestep size changes
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void Update::update_time()
 {
@@ -532,7 +533,7 @@ void Update::update_time()
 
 /* ----------------------------------------------------------------------
    memory usage of update and integrate/minimize
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 bigint Update::memory_usage()
 {
