@@ -1,19 +1,19 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+http://lammps.sandia.gov, Sandia National Laboratories
+Steve Plimpton, sjplimp@sandia.gov
 
-   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under
-   the GNU General Public License.
+Copyright (2003) Sandia Corporation.  Under the terms of Contract
+DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+certain rights in this software.  This software is distributed under
+the GNU General Public License.
 
-   See the README file in the top-level LAMMPS directory.
+See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------
    Contributing author: Matteo Ricci
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 #include "pair_gayberne_soft.h"
 #include <mpi.h>
@@ -35,16 +35,16 @@
 using namespace LAMMPS_NS;
 
 static const char cite_pair_gayberne_soft[] =
-  "pair gayberne/soft command:\n\n"
-  "@Article{,\n"
-  // "@Article{Brown09,\n"
-  // " author =  {W. M. Brown, M. K. Petersen, S. J. Plimpton, and G. S. Grest},\n"
-  // " title =   {Liquid crystal nanodroplets in solution},\n"
-  // " journal = {J.~Chem.~Phys.},\n"
-  // " year =    2009,\n"
-  // " volume =  130,\n"
-  // " pages =   {044901}\n"
-  "}\n\n";
+"pair gayberne/soft command:\n\n"
+"@Article{,\n"
+// "@Article{Brown09,\n"
+// " author =  {W. M. Brown, M. K. Petersen, S. J. Plimpton, and G. S. Grest},\n"
+// " title =   {Liquid crystal nanodroplets in solution},\n"
+// " journal = {J.~Chem.~Phys.},\n"
+// " year =    2009,\n"
+// " volume =  130,\n"
+// " pages =   {044901}\n"
+"}\n\n";
 
 /* ---------------------------------------------------------------------- */
 
@@ -58,7 +58,7 @@ PairGayBerneSoft::PairGayBerneSoft(LAMMPS *lmp) : Pair(lmp)
 
 /* ----------------------------------------------------------------------
    free all arrays
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 PairGayBerneSoft::~PairGayBerneSoft()
 {
@@ -120,14 +120,12 @@ void PairGayBerneSoft::compute(int eflag, int vflag)
     i = ilist[ii];
     itype = type[i];
 
-    if (form[itype][itype] == ELLIPSE_ELLIPSE) {
-      iquat = bonus[ellipsoid[i]].quat;
-      MathExtra::quat_to_mat_trans(iquat,a1);
-      MathExtra::diag_times3(well[itype],a1,temp);
-      MathExtra::transpose_times3(a1,temp,b1);
-      MathExtra::diag_times3(shape2[itype],a1,temp);
-      MathExtra::transpose_times3(a1,temp,g1);
-    }
+    iquat = bonus[ellipsoid[i]].quat;
+    MathExtra::quat_to_mat_trans(iquat,a1);
+    MathExtra::diag_times3(well[itype],a1,temp);
+    MathExtra::transpose_times3(a1,temp,b1);
+    MathExtra::diag_times3(shape2[itype],a1,temp);
+    MathExtra::transpose_times3(a1,temp,g1);
 
     jlist = firstneigh[i];
     jnum = numneigh[i];
@@ -148,50 +146,14 @@ void PairGayBerneSoft::compute(int eflag, int vflag)
       // compute if less than cutoff
 
       if (rsq < cutsq[itype][jtype]) {
-
-        switch (form[itype][jtype]) {
-        case SPHERE_SPHERE:
-          r2inv = 1.0/rsq;
-          r6inv = r2inv*r2inv*r2inv;
-          forcelj = r6inv * (lj1[itype][jtype]*r6inv - lj2[itype][jtype]);
-          forcelj *= -r2inv;
-          if (eflag) one_eng =
-                       r6inv*(r6inv*lj3[itype][jtype]-lj4[itype][jtype]) -
-                       offset[itype][jtype];
-          fforce[0] = r12[0]*forcelj;
-          fforce[1] = r12[1]*forcelj;
-          fforce[2] = r12[2]*forcelj;
-          ttor[0] = ttor[1] = ttor[2] = 0.0;
-          rtor[0] = rtor[1] = rtor[2] = 0.0;
-          break;
-
-        case SPHERE_ELLIPSE:
-          jquat = bonus[ellipsoid[j]].quat;
-          MathExtra::quat_to_mat_trans(jquat,a2);
-          MathExtra::diag_times3(well[jtype],a2,temp);
-          MathExtra::transpose_times3(a2,temp,b2);
-          MathExtra::diag_times3(shape2[jtype],a2,temp);
-          MathExtra::transpose_times3(a2,temp,g2);
-          one_eng = gayberne_lj(j,i,a2,b2,g2,r12,rsq,fforce,rtor);
-          ttor[0] = ttor[1] = ttor[2] = 0.0;
-          break;
-
-        case ELLIPSE_SPHERE:
-          one_eng = gayberne_lj(i,j,a1,b1,g1,r12,rsq,fforce,ttor);
-          rtor[0] = rtor[1] = rtor[2] = 0.0;
-          break;
-
-        default:
-          jquat = bonus[ellipsoid[j]].quat;
-          MathExtra::quat_to_mat_trans(jquat,a2);
-          MathExtra::diag_times3(well[jtype],a2,temp);
-          MathExtra::transpose_times3(a2,temp,b2);
-          MathExtra::diag_times3(shape2[jtype],a2,temp);
-          MathExtra::transpose_times3(a2,temp,g2);
-          one_eng = gayberne_analytic(i,j,a1,a2,b1,b2,g1,g2,r12,rsq,
-                                      fforce,ttor,rtor);
-          break;
-        }
+        jquat = bonus[ellipsoid[j]].quat;
+        MathExtra::quat_to_mat_trans(jquat,a2);
+        MathExtra::diag_times3(well[jtype],a2,temp);
+        MathExtra::transpose_times3(a2,temp,b2);
+        MathExtra::diag_times3(shape2[jtype],a2,temp);
+        MathExtra::transpose_times3(a2,temp,g2);
+        one_eng = gayberne_analytic(i,j,a1,a2,b1,b2,g1,g2,r12,rsq,
+                                    fforce,ttor,rtor);
 
         fforce[0] *= factor_lj;
         fforce[1] *= factor_lj;
@@ -233,7 +195,7 @@ void PairGayBerneSoft::compute(int eflag, int vflag)
 
 /* ----------------------------------------------------------------------
    allocate all arrays
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void PairGayBerneSoft::allocate()
 {
@@ -269,7 +231,7 @@ void PairGayBerneSoft::allocate()
 
 /* ----------------------------------------------------------------------
    global settings
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void PairGayBerneSoft::settings(int narg, char **arg)
 {
@@ -294,7 +256,7 @@ void PairGayBerneSoft::settings(int narg, char **arg)
 
 /* ----------------------------------------------------------------------
    set coeffs for one or more type pairs
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void PairGayBerneSoft::coeff(int narg, char **arg)
 {
@@ -351,7 +313,7 @@ void PairGayBerneSoft::coeff(int narg, char **arg)
 
 /* ----------------------------------------------------------------------
    init specific to this pair style
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void PairGayBerneSoft::init_style()
 {
@@ -380,7 +342,7 @@ void PairGayBerneSoft::init_style()
 
 /* ----------------------------------------------------------------------
    init for one type pair i,j and corresponding j,i
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 double PairGayBerneSoft::init_one(int i, int j)
 {
@@ -448,7 +410,7 @@ double PairGayBerneSoft::init_one(int i, int j)
 
 /* ----------------------------------------------------------------------
    proc 0 writes to restart file
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void PairGayBerneSoft::write_restart(FILE *fp)
 {
@@ -472,7 +434,7 @@ void PairGayBerneSoft::write_restart(FILE *fp)
 
 /* ----------------------------------------------------------------------
    proc 0 reads from restart file, bcasts
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void PairGayBerneSoft::read_restart(FILE *fp)
 {
@@ -509,7 +471,7 @@ void PairGayBerneSoft::read_restart(FILE *fp)
 
 /* ----------------------------------------------------------------------
    proc 0 writes to restart file
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void PairGayBerneSoft::write_restart_settings(FILE *fp)
 {
@@ -523,7 +485,7 @@ void PairGayBerneSoft::write_restart_settings(FILE *fp)
 
 /* ----------------------------------------------------------------------
    proc 0 reads from restart file, bcasts
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void PairGayBerneSoft::read_restart_settings(FILE *fp)
 {
@@ -546,7 +508,7 @@ void PairGayBerneSoft::read_restart_settings(FILE *fp)
 
 /* ----------------------------------------------------------------------
    proc 0 writes to data file
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void PairGayBerneSoft::write_data(FILE *fp)
 {
@@ -560,7 +522,7 @@ void PairGayBerneSoft::write_data(FILE *fp)
 
 /* ----------------------------------------------------------------------
    proc 0 writes all pairs to data file
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void PairGayBerneSoft::write_data_all(FILE *fp)
 {
@@ -578,7 +540,7 @@ void PairGayBerneSoft::write_data_all(FILE *fp)
    compute analytic energy, force (fforce), and torque (ttor & rtor)
    based on rotation matrices a and precomputed matrices b and g
    if newton is off, rtor is not calculated for ghost atoms
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 double PairGayBerneSoft::gayberne_analytic(const int i,const int j,double a1[3][3],
                                            double a2[3][3], double b1[3][3],
@@ -770,12 +732,12 @@ double PairGayBerneSoft::gayberne_analytic(const int i,const int j,double a1[3][
 /* ----------------------------------------------------------------------
    compute analytic energy, force (fforce), and torque (ttor)
    between ellipsoid and lj particle
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 double PairGayBerneSoft::gayberne_lj(const int i,const int j,double a1[3][3],
-                                 double b1[3][3],double g1[3][3],
-                                 double *r12,const double rsq,double *fforce,
-                                 double *ttor)
+                                     double b1[3][3],double g1[3][3],
+                                     double *r12,const double rsq,double *fforce,
+                                     double *ttor)
 {
   double tempv[3], tempv2[3];
   double temp[3][3];
@@ -925,10 +887,10 @@ double PairGayBerneSoft::gayberne_lj(const int i,const int j,double a1[3][3],
    computes trace in the last doc equation for the torque derivative
    code comes from symbolic solver dump
    m is g12, m2 is a_i, s is the shape for the particle
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 
 void PairGayBerneSoft::compute_eta_torque(double m[3][3], double m2[3][3],
-                                      double *s, double ans[3][3])
+                                          double *s, double ans[3][3])
 {
   double den = m[1][0]*m[0][2]*m[2][1]-m[0][0]*m[1][2]*m[2][1]-
     m[0][2]*m[2][0]*m[1][1]+m[0][1]*m[2][0]*m[1][2]-
@@ -1005,10 +967,10 @@ void *PairGayBerneSoft::extract(const char *str, int &dim)
    ---------------------------------------------------------------------- */
 
 double PairGayBerneSoft::single(int i, int j, int itype, int jtype, double rsq,
-                            double factor_coul,
-                            double factor_lj,
-                            double &fpair) // force is expected
-// to be isotropic....
+                                double factor_coul,
+                                double factor_lj,
+                                double &fpair) // force is expected
+  // to be isotropic....
 {
   double a1[3][3],b1[3][3],g1[3][3],a2[3][3],b2[3][3],g2[3][3],temp[3][3];
   double one_eng(0.0), r2inv(0.0), r6inv(0.0), forcelj(0.0);
@@ -1083,11 +1045,11 @@ double PairGayBerneSoft::single(int i, int j, int itype, int jtype, double rsq,
    ---------------------------------------------------------------------- */
 
 double PairGayBerneSoft::single_aniso(int i, int j, int itype, int jtype,
-                                  double rsq,
-                                  double factor_coul, double factor_lj,
-                                  double fforce[3],
-                                  double ttor[3],
-                                  double rtor[3])
+                                      double rsq,
+                                      double factor_coul, double factor_lj,
+                                      double fforce[3],
+                                      double ttor[3],
+                                      double rtor[3])
 {
   double a1[3][3],b1[3][3],g1[3][3],a2[3][3],b2[3][3],g2[3][3],temp[3][3];
   double one_eng(0.0), r2inv(0.0), r6inv(0.0), forcelj(0.0);
