@@ -649,6 +649,8 @@ double PairGayBerneSoft::gayberne_analytic(const int i,const int j,double a1[3][
   fforce[1] = temp1*dchi[1]-temp3*dUr[1];
   fforce[2] = temp1*dchi[2]-temp3*dUr[2];
 
+  printf("FORCE %i %i %i %i %f %f %f\n", i, j, type[i], type[j], fforce[0], fforce[1], fforce[2]);
+
   // torque for particle 1 and 2
   // compute dUr
 
@@ -988,54 +990,21 @@ double PairGayBerneSoft::single(int i, int j, int itype, int jtype, double rsq,
   // dont trust passed arg
   rsq = r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2];
 
-  switch (form[itype][jtype]) {
-  case SPHERE_SPHERE:
-    r2inv = 1.0/rsq;
-    r6inv = r2inv*r2inv*r2inv;
-    forcelj = r6inv * (lj1[itype][jtype]*r6inv - lj2[itype][jtype]);
-    forcelj *= -r2inv;
-    one_eng = r6inv*(r6inv*lj3[itype][jtype]-lj4[itype][jtype]) - offset[itype][jtype];
-    fforce[0] = r12[0]*forcelj;
-    fforce[1] = r12[1]*forcelj;
-    fforce[2] = r12[2]*forcelj;
-    ttor[0] = ttor[1] = ttor[2] = 0.0;
-    rtor[0] = rtor[1] = rtor[2] = 0.0;
-    break;
+  iquat = bonus[ellipsoid[i]].quat;
+  MathExtra::quat_to_mat_trans(iquat,a1);
+  MathExtra::diag_times3(well[itype],a1,temp);
+  MathExtra::transpose_times3(a1,temp,b1);
+  MathExtra::diag_times3(shape2[itype],a1,temp);
+  MathExtra::transpose_times3(a1,temp,g1);
 
-  case SPHERE_ELLIPSE:
-    jquat = bonus[ellipsoid[j]].quat;
-    MathExtra::quat_to_mat_trans(jquat,a2);
-    MathExtra::diag_times3(well[jtype],a2,temp);
-    MathExtra::transpose_times3(a2,temp,b2);
-    MathExtra::diag_times3(shape2[jtype],a2,temp);
-    MathExtra::transpose_times3(a2,temp,g2);
-    one_eng = gayberne_lj(j,i,a2,b2,g2,r12,rsq,fforce,rtor);
-    ttor[0] = ttor[1] = ttor[2] = 0.0;
-    break;
-
-  case ELLIPSE_SPHERE:
-    one_eng = gayberne_lj(i,j,a1,b1,g1,r12,rsq,fforce,ttor);
-    rtor[0] = rtor[1] = rtor[2] = 0.0;
-    break;
-
-  default:
-    iquat = bonus[ellipsoid[i]].quat;
-    MathExtra::quat_to_mat_trans(iquat,a1);
-    MathExtra::diag_times3(well[itype],a1,temp);
-    MathExtra::transpose_times3(a1,temp,b1);
-    MathExtra::diag_times3(shape2[itype],a1,temp);
-    MathExtra::transpose_times3(a1,temp,g1);
-
-    jquat = bonus[ellipsoid[j]].quat;
-    MathExtra::quat_to_mat_trans(jquat,a2);
-    MathExtra::diag_times3(well[jtype],a2,temp);
-    MathExtra::transpose_times3(a2,temp,b2);
-    MathExtra::diag_times3(shape2[jtype],a2,temp);
-    MathExtra::transpose_times3(a2,temp,g2);
-    one_eng = gayberne_analytic(i,j,a1,a2,b1,b2,g1,g2,r12,rsq,
-                                fforce,ttor,rtor);
-    break;
-  }
+  jquat = bonus[ellipsoid[j]].quat;
+  MathExtra::quat_to_mat_trans(jquat,a2);
+  MathExtra::diag_times3(well[jtype],a2,temp);
+  MathExtra::transpose_times3(a2,temp,b2);
+  MathExtra::diag_times3(shape2[jtype],a2,temp);
+  MathExtra::transpose_times3(a2,temp,g2);
+  one_eng = gayberne_analytic(i,j,a1,a2,b1,b2,g1,g2,r12,rsq,
+                              fforce,ttor,rtor);
 
   return factor_lj*one_eng;
 }
@@ -1064,54 +1033,21 @@ double PairGayBerneSoft::single_aniso(int i, int j, int itype, int jtype,
   r12[1] = x[j][1]-x[i][1];
   r12[2] = x[j][2]-x[i][2];
 
-  switch (form[itype][jtype]) {
-  case SPHERE_SPHERE:
-    r2inv = 1.0/rsq;
-    r6inv = r2inv*r2inv*r2inv;
-    forcelj = r6inv * (lj1[itype][jtype]*r6inv - lj2[itype][jtype]);
-    forcelj *= -r2inv;
-    one_eng = r6inv*(r6inv*lj3[itype][jtype]-lj4[itype][jtype]) - offset[itype][jtype];
-    fforce[0] = r12[0]*forcelj;
-    fforce[1] = r12[1]*forcelj;
-    fforce[2] = r12[2]*forcelj;
-    ttor[0] = ttor[1] = ttor[2] = 0.0;
-    rtor[0] = rtor[1] = rtor[2] = 0.0;
-    break;
+  iquat = bonus[ellipsoid[i]].quat;
+  MathExtra::quat_to_mat_trans(iquat,a1);
+  MathExtra::diag_times3(well[itype],a1,temp);
+  MathExtra::transpose_times3(a1,temp,b1);
+  MathExtra::diag_times3(shape2[itype],a1,temp);
+  MathExtra::transpose_times3(a1,temp,g1);
 
-  case SPHERE_ELLIPSE:
-    jquat = bonus[ellipsoid[j]].quat;
-    MathExtra::quat_to_mat_trans(jquat,a2);
-    MathExtra::diag_times3(well[jtype],a2,temp);
-    MathExtra::transpose_times3(a2,temp,b2);
-    MathExtra::diag_times3(shape2[jtype],a2,temp);
-    MathExtra::transpose_times3(a2,temp,g2);
-    one_eng = gayberne_lj(j,i,a2,b2,g2,r12,rsq,fforce,rtor);
-    ttor[0] = ttor[1] = ttor[2] = 0.0;
-    break;
-
-  case ELLIPSE_SPHERE:
-    one_eng = gayberne_lj(i,j,a1,b1,g1,r12,rsq,fforce,ttor);
-    rtor[0] = rtor[1] = rtor[2] = 0.0;
-    break;
-
-  default:
-    iquat = bonus[ellipsoid[i]].quat;
-    MathExtra::quat_to_mat_trans(iquat,a1);
-    MathExtra::diag_times3(well[itype],a1,temp);
-    MathExtra::transpose_times3(a1,temp,b1);
-    MathExtra::diag_times3(shape2[itype],a1,temp);
-    MathExtra::transpose_times3(a1,temp,g1);
-
-    jquat = bonus[ellipsoid[j]].quat;
-    MathExtra::quat_to_mat_trans(jquat,a2);
-    MathExtra::diag_times3(well[jtype],a2,temp);
-    MathExtra::transpose_times3(a2,temp,b2);
-    MathExtra::diag_times3(shape2[jtype],a2,temp);
-    MathExtra::transpose_times3(a2,temp,g2);
-    one_eng = gayberne_analytic(i,j,a1,a2,b1,b2,g1,g2,r12,rsq,
-                                fforce,ttor,rtor);
-    break;
-  }
+  jquat = bonus[ellipsoid[j]].quat;
+  MathExtra::quat_to_mat_trans(jquat,a2);
+  MathExtra::diag_times3(well[jtype],a2,temp);
+  MathExtra::transpose_times3(a2,temp,b2);
+  MathExtra::diag_times3(shape2[jtype],a2,temp);
+  MathExtra::transpose_times3(a2,temp,g2);
+  one_eng = gayberne_analytic(i,j,a1,a2,b1,b2,g1,g2,r12,rsq,
+                              fforce,ttor,rtor);
 
   fforce[0] *= factor_lj;
   fforce[1] *= factor_lj;
