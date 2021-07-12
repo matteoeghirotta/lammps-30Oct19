@@ -593,7 +593,6 @@ double PairGayBerneSoft::gayberne_analytic(const int i,const int j,double a1[3][
   double varrho12 = varrho6*varrho6;
   double varrho23 = varrho11*varrho12;
   double u_r = soft_factor * 4.0*epsilon[type[i]][type[j]]*(varrho12/(varrho12*alpha_factor_2+2.0*alpha_factor*varrho6+1.0)-varrho6/(varrho6*alpha_factor+1.0));
-  // double u_r = soft_factor * 4.0*epsilon[type[i]][type[j]]*((alpha_factor+varrho6
 
   // compute eta_12
 
@@ -620,7 +619,7 @@ double PairGayBerneSoft::gayberne_analytic(const int i,const int j,double a1[3][
   // force
   // compute dUr/dr
 
-  double dVarrhoDr = pow(varrho, 2);
+  double dVarrhoDr = pow(varrho, 2)/sigma[type[i]][type[j]];
   temp1 = dVarrhoDr*6.0*pow(varrho, -7)*(2.0*pow(alpha_factor+pow(varrho, -6), -3.0) - pow(alpha_factor+pow(varrho, -6), -2.0));
   temp1 = soft_factor*4.0*temp1*epsilon[type[i]][type[j]];
 
