@@ -183,8 +183,6 @@ void PairCoulLongOffcentreSoft::compute_pair(int i, int j, int eflag, int vflag,
 
         double r = sqrt(rsq);
 
-        // printf("DEBUG PCLOFF %f %f %f\n", q1, q2, r);
-
         grij = g_ewald * r;
         expm2 = exp(-grij*grij);
         t = 1.0 / (1.0 + EWALD_P*grij);
@@ -232,10 +230,8 @@ void PairCoulLongOffcentreSoft::compute_pair(int i, int j, int eflag, int vflag,
 
         if (eflag) {
           prefactor = qqrd2e * lam1[itype][jtype] * q1*q2 / denc;
-          printf("PREF %i %i %f %f\n", itype, jtype, lam1[itype][jtype], lam2[itype][jtype]);
           ecoul = prefactor*erfc;
           if (factor_coul < 1.0) ecoul -= (1.0-factor_coul)*prefactor;
-          printf("ECOUL %i %i %f %f %f\n", itype, jtype, ecoul, factor_coul, prefactor);
         }
 
         if (evflag) {
